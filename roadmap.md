@@ -94,13 +94,29 @@
 ---
 
 ### Phase 2 : Structure Scolaire & Emplois du Temps
-* **Statut** : À FAIRE
+* **Statut** : **EN COURS (Étape 2.1 Terminée & Validée)**
 * **Objectif** : Configurer la hiérarchie académique complète de l'établissement et planifier les cours.
-* **Livrables à réaliser** :
-  - [ ] Gestion des Années Scolaires : création, sélection, bascule d'année active (avec règle d'année active unique).
-  - [ ] Configuration des Périodes : trimestres ou semestres avec workflow de statuts (`open`, `review`, `locked`).
-  - [ ] Organisation pédagogique : Cycles (Primaire, Collège, Lycée), Niveaux, Séries (A, C, D...), Classes et Groupes.
-  - [ ] Catalogue des Matières : libellé, code unique, description, statut actif.
+* **Livrables réalisés & en cours** :
+  - [x] **Barre latérale administrative & En-tête de pilotage (`src/components/dashboard/`)** :
+    - Navigation latérale institutionnelle Bleu Nuit (`#002047`) avec logo officiel, identité école et icônes filaires fines.
+    - En-tête avec indicateur en temps réel de l'année scolaire active et de la période ouverte aux saisies.
+  - [x] **Module 1 : Années Scolaires & Périodes (`src/app/(dashboard)/admin/academic-years/`)** :
+    - Liste des années scolaires enregistrées avec mise en avant de l'année active.
+    - Bascule sécurisée d'année active (`setActiveAcademicYearAction`) respectant la contrainte unique.
+    - Création d'année scolaire (`createAcademicYearAction`) avec initialisation automatique des trimestres ou semestres.
+    - Gestion du cycle de vie des périodes (`open` $\rightarrow$ `review` $\rightarrow$ `locked`) avec boutons d'actions directes.
+  - [x] **Module 2 : Cycles, Niveaux, Séries & Classes (`src/app/(dashboard)/admin/classes/`)** :
+    - Filtrage par cycle (*Tous, Collège, Lycée, Primaire, Maternelle*).
+    - Moteur de recherche instantané par classe, niveau ou série.
+    - Indicateurs synthétiques : nombre de classes actives, capacité totale d'élèves, cycles déployés.
+    - Formulaire modal de création de classe avec adaptation dynamique selon le cycle (ex: Séries A4, C4, D pour le Lycée).
+    - Suppression sécurisée de classe (`deleteClassAction`).
+  - [ ] **Étape 2.2 — Catalogue des Matières & Matrice des Coefficients** :
+    - Référentiel des disciplines (code, libellé, statut).
+    - Affectation par classe avec coefficients officiels (Togo / MENFP).
+  - [ ] **Étape 2.3 — Emplois du temps hebdomadaires & Moteur anti-conflits** :
+    - Planification hebdomadaire par créneaux horaires.
+    - Détection automatique des collisions de salles et d'enseignants.
   - [ ] Affectations pédagogiques (`class_subjects`) : association matière $\times$ classe $\times$ enseignant $\times$ coefficient.
   - [ ] Emplois du temps (`timetable_slots`) :
     - Saisie des créneaux hebdomadaires (jour, heure début, heure fin, matière, enseignant, salle).
