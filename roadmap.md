@@ -111,16 +111,15 @@
     - Indicateurs synthétiques : nombre de classes actives, capacité totale d'élèves, cycles déployés.
     - Formulaire modal de création de classe avec adaptation dynamique selon le cycle (ex: Séries A4, C4, D pour le Lycée).
     - Suppression sécurisée de classe (`deleteClassAction`).
-  - [ ] **Étape 2.2 — Catalogue des Matières & Matrice des Coefficients** :
-    - Référentiel des disciplines (code, libellé, statut).
-    - Affectation par classe avec coefficients officiels (Togo / MENFP).
+  - [x] **Étape 2.2 — Catalogue des Matières & Matrice des Coefficients (`src/app/(dashboard)/admin/subjects/`)** :
+    - Migration SQL [supabase/migrations/00002_academic_structure.sql](file:///c:/Users/HP/Desktop/My%20Projects/sukulu/supabase/migrations/00002_academic_structure.sql) : tables `subjects`, `class_subjects` et politiques d'isolation RLS.
+    - Catalogue complet des disciplines (code unique, nom, description, statut).
+    - Initialisation en 1 clic du programme officiel national (Français, Maths, SVT, PC, HG, Anglais, EPS, etc.).
+    - Matrice d'affectation par classe : association Classe $\times$ Matière $\times$ Enseignant $\times$ Coefficient.
+    - Édition directe des coefficients et calcul instantané du total des coefficients par classe.
   - [ ] **Étape 2.3 — Emplois du temps hebdomadaires & Moteur anti-conflits** :
-    - Planification hebdomadaire par créneaux horaires.
+    - Planification hebdomadaire par créneaux horaires (`timetable_slots`).
     - Détection automatique des collisions de salles et d'enseignants.
-  - [ ] Affectations pédagogiques (`class_subjects`) : association matière $\times$ classe $\times$ enseignant $\times$ coefficient.
-  - [ ] Emplois du temps (`timetable_slots`) :
-    - Saisie des créneaux hebdomadaires (jour, heure début, heure fin, matière, enseignant, salle).
-    - Moteur de détection des conflits horaires (enseignant ou classe déjà occupé).
     - Vue emploi du temps par classe et par enseignant.
 
 ---

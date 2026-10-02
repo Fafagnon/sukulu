@@ -272,6 +272,105 @@ export type Database = {
           }
         ];
       };
+      subjects: {
+        Row: {
+          id: string;
+          school_id: string;
+          name: string;
+          code: string;
+          description: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          name: string;
+          code: string;
+          description?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          name?: string;
+          code?: string;
+          description?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subjects_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      class_subjects: {
+        Row: {
+          id: string;
+          school_id: string;
+          class_id: string;
+          subject_id: string;
+          teacher_id: string | null;
+          coefficient: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          class_id: string;
+          subject_id: string;
+          teacher_id?: string | null;
+          coefficient?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          class_id?: string;
+          subject_id?: string;
+          teacher_id?: string | null;
+          coefficient?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "class_subjects_class_id_fkey";
+            columns: ["class_id"];
+            isOneToOne: false;
+            referencedRelation: "classes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "class_subjects_subject_id_fkey";
+            columns: ["subject_id"];
+            isOneToOne: false;
+            referencedRelation: "subjects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "class_subjects_teacher_id_fkey";
+            columns: ["teacher_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       audit_logs: {
         Row: {
           id: string;
