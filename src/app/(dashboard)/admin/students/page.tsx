@@ -1,14 +1,16 @@
 import * as React from "react";
 import { getStudents, getStudentStats } from "@/features/students/student-actions";
 import { getClasses, getAcademicYears } from "@/features/academic/actions";
+import { getAuthenticatedSchoolContext } from "@/lib/auth-context";
 import { StudentsClient } from "./students-client";
 
 export default async function StudentsPage() {
-  const [studentsRes, statsRes, classesRes, yearsRes] = await Promise.all([
+  const [studentsRes, statsRes, classesRes, yearsRes, schoolCtx] = await Promise.all([
     getStudents(),
     getStudentStats(),
     getClasses(),
     getAcademicYears(),
+    getAuthenticatedSchoolContext(),
   ]);
 
   return (
@@ -29,6 +31,7 @@ export default async function StudentsPage() {
         years={yearsRes.data || []}
         activeYearId={studentsRes.activeYearId ?? null}
         loadError={studentsRes.error}
+        schoolCountry={schoolCtx.country}
       />
     </div>
   );

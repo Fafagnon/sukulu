@@ -1,44 +1,14 @@
 import * as React from "react";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedSchoolContext } from "@/lib/auth-context";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { DashboardHeader } from "@/components/dashboard/header";
-import { type Database } from "@/types/database";
-
-type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
-type SchoolRow = Database["public"]["Tables"]["schools"]["Row"];
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let profile: ProfileRow | null = null;
-  let school: SchoolRow | null = null;
-
-  if (user) {
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    profile = profileData;
-
-    if (profile?.school_id) {
-      const { data: schoolData } = await supabase
-        .from("schools")
-        .select("*")
-        .eq("id", profile.school_id)
-        .maybeSingle();
-
-      school = schoolData;
-    }
-  }
+  const { profile, school } = await getAuthenticatedSchoolContext();
 
   const schoolName = school?.name || "Mon Établissement";
   const schoolCode = school?.short_name || school?.code || "SUKULU";

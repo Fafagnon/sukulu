@@ -98,6 +98,9 @@ interface StatsData {
   cycleCounts: Record<string, number>;
 }
 
+import { useRouter } from "next/navigation";
+import { PhoneInput } from "@/components/ui/phone-input";
+
 export function StudentsClient({
   initialStudents,
   stats,
@@ -105,6 +108,7 @@ export function StudentsClient({
   years,
   activeYearId,
   loadError,
+  schoolCountry = "Togo",
 }: {
   initialStudents: StudentItem[];
   stats: StatsData;
@@ -112,7 +116,9 @@ export function StudentsClient({
   years: AcademicYearItem[];
   activeYearId: string | null;
   loadError?: string;
+  schoolCountry?: string;
 }) {
+  const router = useRouter();
   const [students, setStudents] = React.useState<StudentItem[]>(initialStudents);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedCycle, setSelectedCycle] = React.useState<string>("all");
@@ -265,7 +271,8 @@ export function StudentsClient({
 
       toast.success("Élève enregistré et inscrit avec succès !");
       setIsModalOpen(false);
-      window.location.reload();
+      setIsSubmitting(false);
+      router.refresh();
     } catch {
       toast.error("Une erreur inattendue est survenue.");
       setIsSubmitting(false);
@@ -412,7 +419,7 @@ export function StudentsClient({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher par nom, prénom ou matricule..."
+              aria-label="Recherche élèves"
               className="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002B5B] focus:border-transparent transition-all"
             />
             {searchQuery && (
@@ -783,7 +790,6 @@ export function StudentsClient({
                     <input
                       type="text"
                       name="lastName"
-                      placeholder="Ex: MENSAH"
                       required
                       className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002B5B]"
                     />
@@ -796,7 +802,6 @@ export function StudentsClient({
                     <input
                       type="text"
                       name="firstName"
-                      placeholder="Ex: Koffi Emmanuel"
                       required
                       className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002B5B]"
                     />
@@ -821,7 +826,6 @@ export function StudentsClient({
                     <input
                       type="text"
                       name="birthPlace"
-                      placeholder="Ex: Lomé"
                       className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002B5B]"
                     />
                   </div>
@@ -920,7 +924,6 @@ export function StudentsClient({
                     <input
                       type="text"
                       name="parentLastName"
-                      placeholder="Ex: MENSAH"
                       className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002B5B]"
                     />
                   </div>
@@ -932,7 +935,6 @@ export function StudentsClient({
                     <input
                       type="text"
                       name="parentFirstName"
-                      placeholder="Ex: Jean-Paul"
                       className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002B5B]"
                     />
                   </div>
@@ -941,11 +943,9 @@ export function StudentsClient({
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
                       Téléphone joignable (WhatsApp/SMS)
                     </label>
-                    <input
-                      type="tel"
+                    <PhoneInput
                       name="parentPhone"
-                      placeholder="Ex: +228 90 12 34 56"
-                      className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002B5B]"
+                      defaultCountry={schoolCountry}
                     />
                   </div>
 
@@ -956,7 +956,6 @@ export function StudentsClient({
                     <input
                       type="text"
                       name="parentProfession"
-                      placeholder="Ex: Enseignant, Commerçant"
                       className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002B5B]"
                     />
                   </div>

@@ -948,7 +948,6 @@ export function StudentDetailClient({
                 </label>
                 <textarea
                   name="notes"
-                  placeholder="Ex: Passage avec avis favorable du conseil de classe..."
                   rows={2}
                   className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl"
                 />

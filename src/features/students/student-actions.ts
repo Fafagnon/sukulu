@@ -4,38 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { type StudentStatus, type Gender } from "@/types/database";
 
-// Helper pour récupérer le contexte établissement
-async function getAuthenticatedSchoolContext() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("school_id, role")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (profile?.school_id) {
-      return { supabase, user, schoolId: profile.school_id, role: profile.role };
-    }
-  }
-
-  // Fallback dev si session non active en local
-  const { data: defaultSchool } = await supabase
-    .from("schools")
-    .select("id")
-    .limit(1)
-    .maybeSingle();
-
-  if (defaultSchool) {
-    return { supabase, user: null, schoolId: defaultSchool.id, role: "direction" as const };
-  }
-
-  throw new Error("Aucun établissement disponible.");
-}
+import { getAuthenticatedSchoolContext } from "@/lib/auth-context";
 
 /**
  * 1. Génère un matricule élève unique séquentiel : SUK-YYYY-XXXX

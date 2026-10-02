@@ -3,28 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-async function getAuthenticatedSchoolContext() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("Utilisateur non authentifié.");
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("school_id, role")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile || !profile.school_id) {
-    throw new Error("Aucun établissement rattaché à ce compte.");
-  }
-
-  return { supabase, user, schoolId: profile.school_id, role: profile.role };
-}
+import { getAuthenticatedSchoolContext } from "@/lib/auth-context";
 
 /**
  * 1. Récupère le catalogue des matières de l'école

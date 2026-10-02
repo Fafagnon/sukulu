@@ -1,0 +1,83 @@
+import { cache } from "react";
+import { createClient } from "@/lib/supabase/server";
+
+export interface AuthenticatedSchoolContext {
+  supabase: Awaited<ReturnType<typeof createClient>>;
+  user: { id: string; email?: string } | null;
+  profile: {
+    school_id: string | null;
+    role: string;
+    first_name: string;
+    last_name: string;
+  } | null;
+  school: {
+    id: string;
+    name: string;
+    code: string | null;
+    short_name: string | null;
+    country: string | null;
+    currency: string | null;
+  } | null;
+  schoolId: string;
+  role: string;
+  country: string;
+}
+
+/**
+ * Contexte d'authentification et d'établissement mis en cache par requête HTTP.
+ * Réduit drastiquement le nombre d'appels Supabase en éliminant les requêtes redondantes
+ * entre le Layout et les Pages.
+ */
+export const getAuthenticatedSchoolContext = cache(async (): Promise<AuthenticatedSchoolContext> => {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("school_id, role, first_name, last_name")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profile?.school_id) {
+      const { data: school } = await supabase
+        .from("schools")
+        .select("id, name, code, short_name, country, currency")
+        .eq("id", profile.school_id)
+        .maybeSingle();
+
+      return {
+        supabase,
+        user,
+        profile,
+        school,
+        schoolId: profile.school_id,
+        role: profile.role,
+        country: school?.country || "Togo",
+      };
+    }
+  }
+
+  // Secours si l'utilisateur n'a pas encore de profil rattaché ou en dev
+  const { data: defaultSchool } = await supabase
+    .from("schools")
+    .select("id, name, code, short_name, country, currency")
+    .limit(1)
+    .maybeSingle();
+
+  if (defaultSchool) {
+    return {
+      supabase,
+      user: null,
+      profile: null,
+      school: defaultSchool,
+      schoolId: defaultSchool.id,
+      role: "direction",
+      country: defaultSchool.country || "Togo",
+    };
+  }
+
+  throw new Error("Aucun établissement disponible. Veuillez compléter l'initialisation.");
+});

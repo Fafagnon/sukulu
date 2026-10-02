@@ -236,8 +236,8 @@ export function ClassesClient({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher une classe..."
-              className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 bg-white text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#002B5B] focus:ring-1 focus:ring-[#002B5B]"
+              aria-label="Recherche classe"
+              className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 bg-white text-xs text-slate-900 focus:outline-none focus:border-[#002B5B] focus:ring-1 focus:ring-[#002B5B]"
             />
           </div>
 
@@ -384,7 +384,6 @@ export function ClassesClient({
                     type="text"
                     value={formDivision}
                     onChange={(e) => setFormDivision(e.target.value.toUpperCase())}
-                    placeholder="ex: A, B, 1"
                     maxLength={5}
                     required
                     className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold uppercase text-slate-900 transition-all focus:outline-none focus:border-[#002B5B] focus:ring-1 focus:ring-[#002B5B]"

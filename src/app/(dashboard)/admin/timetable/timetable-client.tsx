@@ -427,7 +427,6 @@ export function TimetableClient({
                 <input
                   name="room"
                   type="text"
-                  placeholder="ex: Salle 04, Bâtiment B"
                   className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 transition-all focus:outline-none focus:border-[#002B5B] focus:ring-1 focus:ring-[#002B5B]"
                 />
               </div>

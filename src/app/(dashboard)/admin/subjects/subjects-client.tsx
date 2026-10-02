@@ -253,8 +253,8 @@ export function SubjectsClient({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Rechercher une discipline..."
-                className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 bg-white text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#002B5B] focus:ring-1 focus:ring-[#002B5B]"
+                aria-label="Recherche matière"
+                className="w-full h-9 pl-9 pr-3 rounded-xl border border-slate-200 bg-white text-xs text-slate-900 focus:outline-none focus:border-[#002B5B] focus:ring-1 focus:ring-[#002B5B]"
               />
             </div>
 
@@ -500,7 +500,6 @@ export function SubjectsClient({
                   name="name"
                   type="text"
                   required
-                  placeholder="ex: Mathématiques"
                   className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 transition-all focus:outline-none focus:border-[#002B5B] focus:ring-1 focus:ring-[#002B5B]"
                 />
               </div>
@@ -513,7 +512,6 @@ export function SubjectsClient({
                   name="code"
                   type="text"
                   required
-                  placeholder="ex: MATH"
                   maxLength={10}
                   className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold uppercase text-slate-900 transition-all focus:outline-none focus:border-[#002B5B] focus:ring-1 focus:ring-[#002B5B]"
                 />

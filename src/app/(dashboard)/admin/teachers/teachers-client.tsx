@@ -23,17 +23,28 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
 
+import { useRouter } from "next/navigation";
+import { PhoneInput } from "@/components/ui/phone-input";
+import { MultiSelectSpecialties } from "@/components/ui/multi-select-specialties";
+
 export function TeachersClient({
   initialTeachers,
   loadError,
+  schoolCountry = "Togo",
 }: {
   initialTeachers: TeacherProfile[];
   loadError?: string;
+  schoolCountry?: string;
 }) {
+  const router = useRouter();
   const [teachers, setTeachers] = React.useState<TeacherProfile[]>(initialTeachers);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  React.useEffect(() => {
+    setTeachers(initialTeachers);
+  }, [initialTeachers]);
 
   const filteredTeachers = React.useMemo(() => {
     if (!searchQuery.trim()) return teachers;
@@ -62,7 +73,8 @@ export function TeachersClient({
 
       toast.success("Enseignant ajouté avec succès !");
       setIsModalOpen(false);
-      window.location.reload();
+      setIsSubmitting(false);
+      router.refresh();
     } catch {
       toast.error("Erreur inattendue.");
       setIsSubmitting(false);
@@ -121,7 +133,7 @@ export function TeachersClient({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Rechercher par nom, matière, spécialité ou email..."
+            aria-label="Recherche enseignants"
             className="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002B5B]"
           />
         </div>
@@ -266,9 +278,8 @@ export function TeachersClient({
                   <input
                     type="text"
                     name="lastName"
-                    placeholder="Ex: TCHALA"
                     required
-                    className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl"
+                    className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#002B5B]"
                   />
                 </div>
                 <div>
@@ -278,9 +289,8 @@ export function TeachersClient({
                   <input
                     type="text"
                     name="firstName"
-                    placeholder="Ex: Yawo Marc"
                     required
-                    className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl"
+                    className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#002B5B]"
                   />
                 </div>
               </div>
@@ -292,59 +302,26 @@ export function TeachersClient({
                 <input
                   type="email"
                   name="email"
-                  placeholder="Ex: yawo.tchala@sukulu.tg"
                   required
-                  className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl"
+                  className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#002B5B]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Téléphone (WhatsApp/SMS)
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    placeholder="Ex: +228 91 22 33 44"
-                    className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Discipline / Spécialité
-                  </label>
-                  <input
-                    type="text"
-                    name="specialty"
-                    placeholder="Ex: Mathématiques, SVT..."
-                    className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl"
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Téléphone (WhatsApp/SMS)
+                </label>
+                <PhoneInput
+                  name="phone"
+                  defaultCountry={schoolCountry}
+                />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Qualification / Diplôme
-                  </label>
-                  <input
-                    type="text"
-                    name="qualification"
-                    placeholder="Ex: CAPES, Master 2..."
-                    className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Date d&apos;embauche
-                  </label>
-                  <input
-                    type="date"
-                    name="hireDate"
-                    className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl"
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Discipline(s) / Spécialité(s)
+                </label>
+                <MultiSelectSpecialties name="specialty" />
               </div>
 
               <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">

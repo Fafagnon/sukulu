@@ -55,17 +55,27 @@ interface ParentItem {
   student_parents: StudentLink[];
 }
 
+import { useRouter } from "next/navigation";
+import { PhoneInput } from "@/components/ui/phone-input";
+
 export function ParentsClient({
   initialParents,
   loadError,
+  schoolCountry = "Togo",
 }: {
   initialParents: ParentItem[];
   loadError?: string;
+  schoolCountry?: string;
 }) {
+  const router = useRouter();
   const [parents, setParents] = React.useState<ParentItem[]>(initialParents);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  React.useEffect(() => {
+    setParents(initialParents);
+  }, [initialParents]);
 
   const filteredParents = React.useMemo(() => {
     if (!searchQuery.trim()) return parents;
@@ -99,7 +109,8 @@ export function ParentsClient({
 
       toast.success("Responsable légal ajouté avec succès !");
       setIsModalOpen(false);
-      window.location.reload();
+      setIsSubmitting(false);
+      router.refresh();
     } catch {
       toast.error("Erreur inattendue.");
       setIsSubmitting(false);
@@ -160,7 +171,7 @@ export function ParentsClient({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Rechercher par parent, téléphone ou nom d'enfant..."
+            aria-label="Recherche parents"
             className="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002B5B]"
           />
         </div>
@@ -311,9 +322,8 @@ export function ParentsClient({
                   <input
                     type="text"
                     name="lastName"
-                    placeholder="Ex: MENSAH"
                     required
-                    className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl"
+                    className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#002B5B]"
                   />
                 </div>
                 <div>
@@ -323,9 +333,8 @@ export function ParentsClient({
                   <input
                     type="text"
                     name="firstName"
-                    placeholder="Ex: Jean-Paul"
                     required
-                    className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl"
+                    className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#002B5B]"
                   />
                 </div>
               </div>
@@ -334,12 +343,10 @@ export function ParentsClient({
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Téléphone principal (WhatsApp/SMS) *
                 </label>
-                <input
-                  type="tel"
+                <PhoneInput
                   name="phone"
-                  placeholder="Ex: +228 90 12 34 56"
                   required
-                  className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl"
+                  defaultCountry={schoolCountry}
                 />
               </div>
 
@@ -348,11 +355,9 @@ export function ParentsClient({
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Téléphone secondaire
                   </label>
-                  <input
-                    type="tel"
+                  <PhoneInput
                     name="phoneSecondary"
-                    placeholder="Ex: +228 99 00 11 22"
-                    className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl"
+                    defaultCountry={schoolCountry}
                   />
                 </div>
                 <div>
@@ -362,8 +367,7 @@ export function ParentsClient({
                   <input
                     type="text"
                     name="profession"
-                    placeholder="Ex: Ingénieur, Commerçant"
-                    className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl"
+                    className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#002B5B]"
                   />
                 </div>
               </div>
@@ -375,8 +379,7 @@ export function ParentsClient({
                 <input
                   type="email"
                   name="email"
-                  placeholder="Ex: parent@email.com"
-                  className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl"
+                  className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#002B5B]"
                 />
               </div>
 
@@ -387,8 +390,7 @@ export function ParentsClient({
                 <input
                   type="text"
                   name="address"
-                  placeholder="Ex: Lomé, Quartier Hedzranawoé"
-                  className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl"
+                  className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#002B5B]"
                 />
               </div>
 

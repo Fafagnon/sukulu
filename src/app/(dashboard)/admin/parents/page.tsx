@@ -1,9 +1,13 @@
 import * as React from "react";
 import { getParents } from "@/features/parents/parent-actions";
+import { getAuthenticatedSchoolContext } from "@/lib/auth-context";
 import { ParentsClient } from "./parents-client";
 
 export default async function ParentsPage() {
-  const parentsRes = await getParents();
+  const [parentsRes, schoolCtx] = await Promise.all([
+    getParents(),
+    getAuthenticatedSchoolContext(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -19,6 +23,7 @@ export default async function ParentsPage() {
       <ParentsClient
         initialParents={parentsRes.data || []}
         loadError={parentsRes.error}
+        schoolCountry={schoolCtx.country}
       />
     </div>
   );

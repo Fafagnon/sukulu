@@ -1,9 +1,13 @@
 import * as React from "react";
 import { getTeachers } from "@/features/teachers/teacher-actions";
+import { getAuthenticatedSchoolContext } from "@/lib/auth-context";
 import { TeachersClient } from "./teachers-client";
 
 export default async function TeachersPage() {
-  const teachersRes = await getTeachers();
+  const [teachersRes, schoolCtx] = await Promise.all([
+    getTeachers(),
+    getAuthenticatedSchoolContext(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -19,6 +23,7 @@ export default async function TeachersPage() {
       <TeachersClient
         initialTeachers={teachersRes.data || []}
         loadError={teachersRes.error}
+        schoolCountry={schoolCtx.country}
       />
     </div>
   );

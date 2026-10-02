@@ -39,36 +39,7 @@ export interface TeacherProfile {
   assignments: TeacherAssignment[];
 }
 
-async function getAuthenticatedSchoolContext() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("school_id, role")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (profile?.school_id) {
-      return { supabase, user, schoolId: profile.school_id, role: profile.role };
-    }
-  }
-
-  const { data: defaultSchool } = await supabase
-    .from("schools")
-    .select("id")
-    .limit(1)
-    .maybeSingle();
-
-  if (defaultSchool) {
-    return { supabase, user: null, schoolId: defaultSchool.id, role: "direction" as const };
-  }
-
-  throw new Error("Aucun établissement disponible.");
-}
+import { getAuthenticatedSchoolContext } from "@/lib/auth-context";
 
 /**
  * 1. Récupère la liste des enseignants de l'école avec leurs matières et classes affectées
@@ -144,12 +115,15 @@ export async function getTeachers(search?: string) {
   }
 }
 
+import { createAdminClient } from "@/lib/supabase/server";
+import { getAuthenticatedSchoolContext } from "@/lib/auth-context";
+
 /**
  * 2. Crée un nouveau profil enseignant
  */
 export async function createTeacherAction(formData: FormData) {
   try {
-    const { supabase, schoolId, role } = await getAuthenticatedSchoolContext();
+    const { schoolId, role } = await getAuthenticatedSchoolContext();
 
     if (role !== "direction" && role !== "superadmin") {
       return { error: "Action réservée à la direction de l'établissement." };
@@ -160,59 +134,69 @@ export async function createTeacherAction(formData: FormData) {
     const email = (formData.get("email") as string)?.trim().toLowerCase();
     const phone = (formData.get("phone") as string)?.trim() || null;
     const specialty = (formData.get("specialty") as string)?.trim() || null;
-    const qualification = (formData.get("qualification") as string)?.trim() || null;
-    const hireDate = (formData.get("hireDate") as string)?.trim() || null;
 
     if (!firstName || !lastName || !email) {
       return { error: "Nom, prénom et email sont obligatoires." };
     }
 
-    // 1. Créer ou récupérer le profil utilisateur
-    // Vérifier si l'utilisateur existe déjà
-    const { data: existingProfile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("email", email)
-      .maybeSingle();
+    const admin = createAdminClient();
 
-    let userId = existingProfile?.id;
+    // 1. Vérifier si un compte auth existe déjà pour cet email
+    let userId: string | null = null;
+    const { data: usersData } = await admin.auth.admin.listUsers();
+    const existingUser = usersData?.users.find((u) => u.email?.toLowerCase() === email);
 
-    if (!userId) {
-      // Générer un UUID pour le profil (en prod via auth.admin ou invitation)
-      const { data: newProfile, error: profileErr } = await supabase
-        .from("profiles")
-        .insert({
-          id: crypto.randomUUID(),
-          school_id: schoolId,
-          role: "enseignant",
+    if (existingUser) {
+      userId = existingUser.id;
+    } else {
+      // Créer le compte utilisateur dans Supabase Auth
+      const tempPassword = `Sukulu@${Math.floor(100000 + Math.random() * 900000)}`;
+      const { data: newAuthUser, error: authErr } = await admin.auth.admin.createUser({
+        email,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: {
           first_name: firstName,
           last_name: lastName,
-          email,
-          phone,
-          is_active: true,
-        })
-        .select("id")
-        .single();
+          role: "enseignant",
+        },
+      });
 
-      if (profileErr) throw profileErr;
-      userId = newProfile.id;
+      if (authErr || !newAuthUser?.user) {
+        throw new Error(authErr?.message || "Impossible de générer le compte enseignant.");
+      }
+      userId = newAuthUser.user.id;
     }
 
-    // 2. Créer le profil enseignant rattaché
+    // 2. Garantir le profil public lié à l'établissement
+    const { error: profileErr } = await admin.from("profiles").upsert({
+      id: userId,
+      school_id: schoolId,
+      role: "enseignant",
+      first_name: firstName,
+      last_name: lastName,
+      email,
+      phone,
+      is_active: true,
+    });
+
+    if (profileErr) throw profileErr;
+
+    // 3. Créer le profil enseignant rattaché (sans qualification ni date d'embauche)
     const currentYear = new Date().getFullYear();
     const randomNum = Math.floor(100 + Math.random() * 900);
     const teacherMatricule = `ENS-${currentYear}-${randomNum}`;
 
-    await supabase.from("teacher_profiles").insert({
+    const { error: teacherErr } = await admin.from("teacher_profiles").insert({
       school_id: schoolId,
       user_id: userId,
       matricule: teacherMatricule,
       specialty,
-      qualification,
       phone,
-      hire_date: hireDate || null,
       status: "active",
     });
+
+    if (teacherErr) throw teacherErr;
 
     revalidatePath("/admin/teachers");
     return { success: true };
