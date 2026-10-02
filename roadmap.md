@@ -3,7 +3,7 @@
 > **Statut global du projet** : En cours de construction  
 > **Dépôt officiel** : [https://github.com/Fafagnon/sukulu.git](https://github.com/Fafagnon/sukulu.git)  
 > **Dernière mise à jour** : 2 octobre 2026  
-> **Phase en cours** : **Phase 2 — Structure Scolaire & Emplois du Temps**  
+> **Phase en cours** : **Phase 3 — Communauté Scolaire & SIS (Élèves, Inscriptions, Parents)**  
 > **Documents de référence obligatoires** :
 > - [rules.md](file:///c:/Users/HP/Desktop/My%20Projects/sukulu/rules.md) : Règles permanentes d'architecture, ingénierie, sécurité et direction artistique (zéro AI slop).
 > - [Cahier des charges technique et fonctionnel — SUKULU.md](file:///c:/Users/HP/Desktop/My%20Projects/sukulu/Cahier%20des%20charges%20technique%20et%20fonctionnel%20%E2%80%94%20SUKULU.md) : Spécifications complètes du produit.
@@ -16,8 +16,8 @@
 | :--- | :--- | :--- | :--- |
 | **Phase 0** | **Socle Technique, Design System & Multi-tenant** | **TERMINÉ** | 100 % |
 | **Phase 1** | **Authentification, Onboarding & Contrôle d'Accès** | **TERMINÉ** | 100 % |
-| **Phase 2** | **Structure Scolaire & Emplois du Temps** | **EN COURS** | 0 % |
-| **Phase 3** | **Communauté & SIS (Élèves, Inscriptions, Parents)** | À FAIRE | 0 % |
+| **Phase 2** | **Structure Scolaire & Emplois du Temps** | **TERMINÉ** | 100 % |
+| **Phase 3** | **Communauté & SIS (Élèves, Inscriptions, Parents)** | **EN COURS** | 0 % |
 | **Phase 4** | **Pédagogie & Moteur Centralisé (Notes, Moyennes, Rangs)** | À FAIRE | 0 % |
 | **Phase 5** | **Assiduité & Mode Offline (Appel & Synchronisation)** | À FAIRE | 0 % |
 | **Phase 6** | **Trésorerie Scolaire V1 (Frais, Encaissements & Reçus)** | À FAIRE | 0 % |
@@ -117,10 +117,11 @@
     - Initialisation en 1 clic du programme officiel national (Français, Maths, SVT, PC, HG, Anglais, EPS, etc.).
     - Matrice d'affectation par classe : association Classe $\times$ Matière $\times$ Enseignant $\times$ Coefficient.
     - Édition directe des coefficients et calcul instantané du total des coefficients par classe.
-  - [ ] **Étape 2.3 — Emplois du temps hebdomadaires & Moteur anti-conflits** :
-    - Planification hebdomadaire par créneaux horaires (`timetable_slots`).
-    - Détection automatique des collisions de salles et d'enseignants.
-    - Vue emploi du temps par classe et par enseignant.
+  - [x] **Étape 2.3 — Emplois du temps hebdomadaires & Moteur anti-conflits (`src/app/(dashboard)/admin/timetable/`)** :
+    - [x] Migration SQL [supabase/migrations/00003_timetable.sql](file:///c:/Users/HP/Desktop/My%20Projects/sukulu/supabase/migrations/00003_timetable.sql) : table `timetable_slots`, contraintes horaires et politiques RLS multi-tenant.
+    - [x] Moteur de détection anti-conflits en temps réel dans [src/features/academic/timetable-actions.ts](file:///c:/Users/HP/Desktop/My%20Projects/sukulu/src/features/academic/timetable-actions.ts) : détection des chevauchements de classe, d'enseignant et de salle.
+    - [x] Interface hebdomadaire interactive Lundi–Samedi ([src/app/(dashboard)/admin/timetable/page.tsx](file:///c:/Users/HP/Desktop/My%20Projects/sukulu/src/app/(dashboard)/admin/timetable/page.tsx)) avec double vue « Par Classe » et « Par Enseignant ».
+    - [x] Modal de création conforme à la référence (`creation emploi temps prof.png`) avec sélection classe, matière, enseignant, salle et créneau horaire.
 
 ---
 

@@ -371,6 +371,87 @@ export type Database = {
           }
         ];
       };
+      timetable_slots: {
+        Row: {
+          id: string;
+          school_id: string;
+          academic_year_id: string;
+          class_id: string;
+          subject_id: string;
+          teacher_id: string | null;
+          day_of_week: number;
+          start_time: string;
+          end_time: string;
+          room: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          academic_year_id: string;
+          class_id: string;
+          subject_id: string;
+          teacher_id?: string | null;
+          day_of_week: number;
+          start_time: string;
+          end_time: string;
+          room?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          academic_year_id?: string;
+          class_id?: string;
+          subject_id?: string;
+          teacher_id?: string | null;
+          day_of_week?: number;
+          start_time?: string;
+          end_time?: string;
+          room?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "timetable_slots_academic_year_id_fkey";
+            columns: ["academic_year_id"];
+            isOneToOne: false;
+            referencedRelation: "academic_years";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "timetable_slots_class_id_fkey";
+            columns: ["class_id"];
+            isOneToOne: false;
+            referencedRelation: "classes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "timetable_slots_subject_id_fkey";
+            columns: ["subject_id"];
+            isOneToOne: false;
+            referencedRelation: "subjects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "timetable_slots_teacher_id_fkey";
+            columns: ["teacher_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "timetable_slots_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       audit_logs: {
         Row: {
           id: string;
