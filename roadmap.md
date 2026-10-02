@@ -56,29 +56,40 @@
 
 ---
 
-### Phase 1 : Authentification, Onboarding Établissement & Contrôle d'Accès
-* **Statut** : **TERMINÉ (Validé en production)**
-* **Objectif** : Sécuriser les accès et permettre à la première école pilote de s'inscrire et d'accéder à son environnement cloisonné.
+### Phase 1 : Authentification & Onboarding Établissement (Direction Artistique & UX)
+* **Statut** : **TERMINÉ (Refonte chirurgicale selon références visuelles)**
+* **Objectif** : Fournir une expérience d'entrée fluide et premium : création de compte épurée (Image 2), connexion sécurisée (Image 2) et assistant de configuration d'établissement en 4 étapes (Image 1).
 * **Livrables réalisés** :
-  - [x] **Middleware de protection de routes (`src/middleware.ts`)** :
-    - Rafraîchissement automatique de session via cookies (`@supabase/ssr`).
-    - Protection des routes privées (`/admin/*`, `/teacher/*`, `/parent/*`).
-    - Redirection automatique vers `/login` pour les utilisateurs non authentifiés.
-  - [x] **Page de Connexion unifiée (`src/app/(auth)/login/page.tsx`)** :
-    - Formulaire sobre et soigné avec logo officiel SUKULU.
-    - Saisie email + mot de passe, bouton `isLoading`, messages d'erreurs sécurisés.
-    - Frontière `React.Suspense` pour les paramètres d'URL (anti-bailout).
-    - Aiguillage automatique après connexion selon le rôle :
-      - `direction` $\rightarrow$ `/admin`
-      - `enseignant` $\rightarrow$ `/teacher`
-      - `parent` $\rightarrow$ `/parent`
-  - [x] **Page d'Onboarding d'un Établissement (`src/app/(auth)/register/page.tsx`)** :
-    - Création simultanée de l'école dans `schools` et du compte administrateur dans `auth.users` et `profiles`.
-    - Validation stricte des données avec schéma Zod (nom de l'école, pays, devise, email, mot de passe fort).
-  - [x] **Gestion de la déconnexion et de la session** :
-    - Layout dashboard unifié (`src/app/(dashboard)/layout.tsx`) avec profil et école actifs.
-    - Server Action de déconnexion (`signOutAction`).
-    - Écrans d'accueil personnalisés pour chaque rôle (`/admin`, `/teacher`, `/parent`).
+  - [x] **Composant Shell & Conteneur Mobile-First (`src/components/auth/auth-shell.tsx`)** :
+    - Présentation en carte mobile centrée élégante (`max-w-[420px]`, `rounded-[32px]`, ombres douces multi-couches).
+    - Barre d'état d'application SUKULU avec indicateur temps réel.
+  - [x] **Page de Connexion - "Welcome Back" (`src/app/(auth)/login/page.tsx` - Image 2)** :
+    - Badge supérieur bouclier sécurité avec indicateur pilule.
+    - Titre "Ravi de vous revoir" et sous-titre de guidage.
+    - Saisie Email et Mot de passe avec coins arrondis doux (`rounded-2xl`).
+    - Ligne combinée "Se souvenir de moi" et "Mot de passe oublié ?".
+    - Bouton principal pleine largeur "Se connecter" aux couleurs SUKULU.
+    - Séparateur "Ou" et bouton **Google Sign-In exclusif** (`src/components/auth/google-sign-in-button.tsx`, exclusion stricte d'Apple et Facebook selon directives).
+  - [x] **Page de Création de Compte - "Create Account" (`src/app/(auth)/register/page.tsx` - Image 2)** :
+    - Illustration profil avec badge "+" orange superposé.
+    - Titre "Créer un compte" et formulaire (Nom complet, Email, Mot de passe sécurisé 8+ caractères).
+    - Bouton "Créer mon compte" redirigeant directement vers l'assistant d'onboarding.
+    - Intégration Google Sign-In exclusive.
+  - [x] **Assistant d'Onboarding Établissement en 4 Étapes (`src/app/(auth)/onboarding/page.tsx` - Image 1)** :
+    - En-tête avec indicateur "Étape X sur 4", pourcentage dynamique ("XX% complété") et **barre de progression segmentée orange SUKULU (`#FF6B00`)**.
+    - Icône hero dans un carré aux coins arrondis doux (`rounded-2xl`) avec fond orangé pastel (`bg-orange-50`).
+    - Étape 1 : Choix du type d'établissement via cartes sélectionnables avec surbrillance et bordure orange active (Complexe scolaire, Collège & Lycée, Primaire, Formation).
+    - Étape 2 : Nom officiel, sigle court (avec astuce matricules élèves), ville et pays.
+    - Étape 3 : Organisation académique (Trimestriel vs Semestriel) et devise (FCFA - XOF / XAF).
+    - Étape 4 : Sélection des modules prioritaires (Notes, Assiduité, Caisse, Inscriptions).
+    - Bouton "Continuer" orange arrondi et lien secondaire "Passer cette étape" / "Retour".
+  - [x] **Actions serveur & Base de données (`src/features/auth/actions.ts`)** :
+    - `signUpAction` : création du compte dans `auth.users` et du profil `profiles` (avec `school_id: null` en attente).
+    - `submitOnboardingAction` : création atomique de l'établissement dans `schools`, liaison du profil, initialisation de l'année scolaire 2026-2027 et des périodes académiques par défaut.
+    - `loginAction` : vérification des identifiants et orientation automatique vers `/onboarding` si l'école n'est pas encore créée.
+  - [x] **Middleware & Sécurité des routes (`src/middleware.ts`)** :
+    - Protection de `/onboarding` exigeant une session active.
+    - Redirection fluide vers `/register` si non authentifié.
 
 ---
 

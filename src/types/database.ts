@@ -73,7 +73,7 @@ export type Database = {
       profiles: {
         Row: {
           id: string;
-          school_id: string;
+          school_id: string | null;
           role: UserRole;
           first_name: string;
           last_name: string;
@@ -87,7 +87,7 @@ export type Database = {
         };
         Insert: {
           id: string;
-          school_id: string;
+          school_id?: string | null;
           role?: UserRole;
           first_name: string;
           last_name: string;
@@ -101,7 +101,7 @@ export type Database = {
         };
         Update: {
           id?: string;
-          school_id?: string;
+          school_id?: string | null;
           role?: UserRole;
           first_name?: string;
           last_name?: string;

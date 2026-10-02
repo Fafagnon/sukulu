@@ -47,8 +47,8 @@ CREATE TABLE IF NOT EXISTS public.schools (
 -- 4. TABLE DES PROFILS UTILISATEURS (Liée à auth.users)
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  school_id UUID NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
-  role user_role NOT NULL DEFAULT 'enseignant',
+  school_id UUID REFERENCES public.schools(id) ON DELETE CASCADE,
+  role user_role NOT NULL DEFAULT 'direction',
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
   phone TEXT,
@@ -181,19 +181,29 @@ ALTER TABLE public.periods ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.classes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
--- Politiques pour 'schools' : L'utilisateur ne voit que son propre établissement
-CREATE POLICY "schools_isolation_policy" ON public.schools
-  FOR ALL
+-- Politiques pour 'schools' : L'utilisateur consulte/modifie son établissement, et peut en créer un lors de l'onboarding
+CREATE POLICY "schools_select_policy" ON public.schools
+  FOR SELECT
+  TO authenticated
+  USING (id = public.current_school_id());
+
+CREATE POLICY "schools_insert_policy" ON public.schools
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+
+CREATE POLICY "schools_update_policy" ON public.schools
+  FOR UPDATE
   TO authenticated
   USING (id = public.current_school_id())
   WITH CHECK (id = public.current_school_id());
 
--- Politiques pour 'profiles' : Membres du même établissement uniquement
+-- Politiques pour 'profiles' : L'utilisateur accède à son propre profil ou aux membres de son école
 CREATE POLICY "profiles_isolation_policy" ON public.profiles
   FOR ALL
   TO authenticated
-  USING (school_id = public.current_school_id())
-  WITH CHECK (school_id = public.current_school_id());
+  USING (id = auth.uid() OR school_id = public.current_school_id())
+  WITH CHECK (id = auth.uid() OR school_id = public.current_school_id());
 
 -- Politiques pour 'academic_years'
 CREATE POLICY "academic_years_isolation_policy" ON public.academic_years
