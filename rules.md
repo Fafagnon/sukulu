@@ -1813,3 +1813,7 @@ Tout document officiel généré (reçu, bulletin) doit pouvoir être prévisual
 
 ## 11. Retour haptique sur mobile (PWA Enseignant)
 Sur smartphone, les actions d'appel en classe doivent offrir un micro-retour tactile discret via l'API de vibration (ex: tap court pour « Présent », vibration double pour « Absent »), permettant un appel rapide et les yeux levés vers la classe.
+
+## 12. GitHub 
+Voici le repo de notre logiciel. Fais les commit proprement et pousse quand il faut.
+https://github.com/Fafagnon/sukulu.git
