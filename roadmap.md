@@ -3,7 +3,7 @@
 > **Statut global du projet** : En cours de construction  
 > **Dépôt officiel** : [https://github.com/Fafagnon/sukulu.git](https://github.com/Fafagnon/sukulu.git)  
 > **Dernière mise à jour** : 2 octobre 2026  
-> **Phase en cours** : **Phase 3 — Communauté Scolaire & SIS (Élèves, Inscriptions, Parents)**  
+> **Phase en cours** : **Phase 4 — Pédagogie & Moteur Centralisé (Notes, Moyennes, Rangs)**  
 > **Documents de référence obligatoires** :
 > - [rules.md](file:///c:/Users/HP/Desktop/My%20Projects/sukulu/rules.md) : Règles permanentes d'architecture, ingénierie, sécurité et direction artistique (zéro AI slop).
 > - [Cahier des charges technique et fonctionnel — SUKULU.md](file:///c:/Users/HP/Desktop/My%20Projects/sukulu/Cahier%20des%20charges%20technique%20et%20fonctionnel%20%E2%80%94%20SUKULU.md) : Spécifications complètes du produit.
@@ -17,8 +17,8 @@
 | **Phase 0** | **Socle Technique, Design System & Multi-tenant** | **TERMINÉ** | 100 % |
 | **Phase 1** | **Authentification, Onboarding & Contrôle d'Accès** | **TERMINÉ** | 100 % |
 | **Phase 2** | **Structure Scolaire & Emplois du Temps** | **TERMINÉ** | 100 % |
-| **Phase 3** | **Communauté & SIS (Élèves, Inscriptions, Parents)** | **EN COURS** | 0 % |
-| **Phase 4** | **Pédagogie & Moteur Centralisé (Notes, Moyennes, Rangs)** | À FAIRE | 0 % |
+| **Phase 3** | **Communauté & SIS (Élèves, Inscriptions, Parents)** | **TERMINÉ** | 100 % |
+| **Phase 4** | **Pédagogie & Moteur Centralisé (Notes, Moyennes, Rangs)** | **EN COURS** | 0 % |
 | **Phase 5** | **Assiduité & Mode Offline (Appel & Synchronisation)** | À FAIRE | 0 % |
 | **Phase 6** | **Trésorerie Scolaire V1 (Frais, Encaissements & Reçus)** | À FAIRE | 0 % |
 | **Phase 7** | **Moteur de Bulletins PDF & Circuit de Validation** | À FAIRE | 0 % |
@@ -126,15 +126,25 @@
 ---
 
 ### Phase 3 : Communauté Scolaire & SIS (Élèves, Inscriptions, Parents)
-* **Statut** : À FAIRE
+* **Statut** : **TERMINÉ (Validé en production)**
 * **Objectif** : Gérer la population scolaire, le dossier unique de l'élève et les inscriptions annuelles.
 * **Livrables à réaliser** :
-  - [ ] Fiche élève complète : matricule unique généré automatiquement (`SUK-YYYY-XXXX`), état civil, photo, statut d'archivage.
-  - [ ] Inscriptions annuelles (`enrollments`) : rattachement d'un élève à une classe pour une année scolaire donnée avec conservation de l'historique complet.
-  - [ ] Dossier des Responsables Légaux / Parents (`parent_profiles` & `student_parents`) : rattachement de plusieurs enfants à un parent avec indication du contact principal.
-  - [ ] Assistant d'Import Excel / CSV en 5 étapes : upload, détection des colonnes, validation stricte, prévisualisation avec rapport d'erreurs, import sécurisé.
-  - [ ] Export des listes d'élèves en Excel et CSV.
-  - [ ] Gestion des profils Enseignants (`teacher_profiles`).
+  - [x] Migration SQL [supabase/migrations/00004_students_and_sis.sql](file:///c:/Users/HP/Desktop/My%20Projects/sukulu/supabase/migrations/00004_students_and_sis.sql) : tables `students`, `enrollments`, `parent_profiles`, `student_parents`, `teacher_profiles` avec isolation RLS multi-tenant stricte.
+  - [x] Fiche élève complète & Annuaire ([src/app/(dashboard)/admin/students/](file:///c:/Users/HP/Desktop/My%20Projects/sukulu/src/app/(dashboard)/admin/students/)) :
+    - Matricule unique généré automatiquement (`SUK-YYYY-XXXX`).
+    - État civil complet, photo, calcul d'âge dynamique, observations médicales/groupe sanguin et statut d'archivage.
+    - Filtres instantanés par cycle, classe, statut (`active`, `archived`, etc.) et recherche plein texte.
+  - [x] Inscriptions annuelles (`enrollments`) : rattachement d'un élève à une classe pour une année scolaire donnée avec conservation de l'historique complet, détection des redoublants et traçabilité inter-années ([src/app/(dashboard)/admin/students/[id]/](file:///c:/Users/HP/Desktop/My%20Projects/sukulu/src/app/(dashboard)/admin/students/[id]/)).
+  - [x] Carte d'identité scolaire officielle avec prévisualisation et impression de badge PVC / bristol avec QR Code institutionnel.
+  - [x] Dossier des Responsables Légaux / Parents ([src/app/(dashboard)/admin/parents/](file:///c:/Users/HP/Desktop/My%20Projects/sukulu/src/app/(dashboard)/admin/parents/)) : annuaire des tuteurs, contact direct (appel/WhatsApp), rattachement multi-enfants et indicateur de contact principal.
+  - [x] Gestion des profils Enseignants ([src/app/(dashboard)/admin/teachers/](file:///c:/Users/HP/Desktop/My%20Projects/sukulu/src/app/(dashboard)/admin/teachers/)) : annuaire des professeurs, spécialités, diplômes, affectations de classes et matières.
+  - [x] Assistant d'Import Excel / CSV en 5 étapes ([src/app/(dashboard)/admin/students/import/](file:///c:/Users/HP/Desktop/My%20Projects/sukulu/src/app/(dashboard)/admin/students/import/)) :
+    - Étape 1 : Upload (.xlsx, .xls, .csv) avec téléchargement du modèle officiel.
+    - Étape 2 : Auto-détection intelligente et mapping des colonnes.
+    - Étape 3 : Validation stricte (dates, classes existantes, sexe M/F, unicité matricule).
+    - Étape 4 : Prévisualisation avec bilan des lignes valides/invalides et rapport d'erreurs téléchargeable.
+    - Étape 5 : Exécution sécurisée de l'import par lot.
+  - [x] Export instantané des listes d'élèves en CSV avec respect des filtres actifs.
 
 ---
 

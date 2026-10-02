@@ -15,6 +15,9 @@ import {
   Building2,
   Menu,
   X,
+  Users,
+  UserCheck,
+  Contact,
 } from "lucide-react";
 import { signOutAction } from "@/features/auth/actions";
 
@@ -30,6 +33,21 @@ const navItems = [
     label: "Tableau de bord",
     href: "/admin",
     icon: LayoutDashboard,
+  },
+  {
+    label: "Élèves & Dossiers",
+    href: "/admin/students",
+    icon: Users,
+  },
+  {
+    label: "Enseignants",
+    href: "/admin/teachers",
+    icon: UserCheck,
+  },
+  {
+    label: "Parents & Tuteurs",
+    href: "/admin/parents",
+    icon: Contact,
   },
   {
     label: "Années & Périodes",

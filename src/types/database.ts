@@ -9,6 +9,10 @@ export type Json =
 export type UserRole = "superadmin" | "direction" | "enseignant" | "parent";
 export type PeriodType = "trimestre" | "semestre";
 export type PeriodStatus = "open" | "review" | "locked";
+export type StudentStatus = "active" | "archived" | "graduated" | "transferred";
+export type EnrollmentStatus = "enrolled" | "completed" | "dropped" | "transferred" | "repeating";
+export type TeacherStatus = "active" | "inactive" | "on_leave";
+export type Gender = "M" | "F";
 
 export type Database = {
   public: {
@@ -448,6 +452,315 @@ export type Database = {
             columns: ["school_id"];
             isOneToOne: false;
             referencedRelation: "schools";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      students: {
+        Row: {
+          id: string;
+          school_id: string;
+          matricule: string;
+          first_name: string;
+          last_name: string;
+          gender: Gender;
+          birth_date: string;
+          birth_place: string | null;
+          nationality: string | null;
+          address: string | null;
+          city: string | null;
+          photo_url: string | null;
+          blood_group: string | null;
+          medical_notes: string | null;
+          emergency_contact_name: string | null;
+          emergency_contact_phone: string | null;
+          status: StudentStatus;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          matricule: string;
+          first_name: string;
+          last_name: string;
+          gender: Gender;
+          birth_date: string;
+          birth_place?: string | null;
+          nationality?: string | null;
+          address?: string | null;
+          city?: string | null;
+          photo_url?: string | null;
+          blood_group?: string | null;
+          medical_notes?: string | null;
+          emergency_contact_name?: string | null;
+          emergency_contact_phone?: string | null;
+          status?: StudentStatus;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          matricule?: string;
+          first_name?: string;
+          last_name?: string;
+          gender?: Gender;
+          birth_date?: string;
+          birth_place?: string | null;
+          nationality?: string | null;
+          address?: string | null;
+          city?: string | null;
+          photo_url?: string | null;
+          blood_group?: string | null;
+          medical_notes?: string | null;
+          emergency_contact_name?: string | null;
+          emergency_contact_phone?: string | null;
+          status?: StudentStatus;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "students_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      parent_profiles: {
+        Row: {
+          id: string;
+          school_id: string;
+          user_id: string | null;
+          first_name: string;
+          last_name: string;
+          phone: string;
+          phone_secondary: string | null;
+          email: string | null;
+          profession: string | null;
+          address: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          user_id?: string | null;
+          first_name: string;
+          last_name: string;
+          phone: string;
+          phone_secondary?: string | null;
+          email?: string | null;
+          profession?: string | null;
+          address?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          user_id?: string | null;
+          first_name?: string;
+          last_name?: string;
+          phone?: string;
+          phone_secondary?: string | null;
+          email?: string | null;
+          profession?: string | null;
+          address?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "parent_profiles_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "parent_profiles_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      student_parents: {
+        Row: {
+          id: string;
+          school_id: string;
+          student_id: string;
+          parent_id: string;
+          relationship: string;
+          is_primary: boolean;
+          can_pickup: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          student_id: string;
+          parent_id: string;
+          relationship: string;
+          is_primary?: boolean;
+          can_pickup?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          student_id?: string;
+          parent_id?: string;
+          relationship?: string;
+          is_primary?: boolean;
+          can_pickup?: boolean;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "student_parents_student_id_fkey";
+            columns: ["student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "student_parents_parent_id_fkey";
+            columns: ["parent_id"];
+            isOneToOne: false;
+            referencedRelation: "parent_profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      teacher_profiles: {
+        Row: {
+          id: string;
+          school_id: string;
+          user_id: string;
+          matricule: string | null;
+          specialty: string | null;
+          qualification: string | null;
+          phone: string | null;
+          address: string | null;
+          hire_date: string | null;
+          status: TeacherStatus;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          user_id: string;
+          matricule?: string | null;
+          specialty?: string | null;
+          qualification?: string | null;
+          phone?: string | null;
+          address?: string | null;
+          hire_date?: string | null;
+          status?: TeacherStatus;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          user_id?: string;
+          matricule?: string | null;
+          specialty?: string | null;
+          qualification?: string | null;
+          phone?: string | null;
+          address?: string | null;
+          hire_date?: string | null;
+          status?: TeacherStatus;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "teacher_profiles_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "teacher_profiles_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      enrollments: {
+        Row: {
+          id: string;
+          school_id: string;
+          student_id: string;
+          academic_year_id: string;
+          class_id: string;
+          enrollment_date: string;
+          status: EnrollmentStatus;
+          is_repeater: boolean;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          student_id: string;
+          academic_year_id: string;
+          class_id: string;
+          enrollment_date?: string;
+          status?: EnrollmentStatus;
+          is_repeater?: boolean;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          student_id?: string;
+          academic_year_id?: string;
+          class_id?: string;
+          enrollment_date?: string;
+          status?: EnrollmentStatus;
+          is_repeater?: boolean;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "enrollments_student_id_fkey";
+            columns: ["student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "enrollments_academic_year_id_fkey";
+            columns: ["academic_year_id"];
+            isOneToOne: false;
+            referencedRelation: "academic_years";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "enrollments_class_id_fkey";
+            columns: ["class_id"];
+            isOneToOne: false;
+            referencedRelation: "classes";
             referencedColumns: ["id"];
           }
         ];
