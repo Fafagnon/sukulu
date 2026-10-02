@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { loginSchema, signUpSchema, onboardingSchema } from "./schemas";
 import { type UserRole } from "@/types/database";
 
@@ -178,10 +178,10 @@ export async function submitOnboardingAction(data: {
   }
 
   try {
-    const supabase = await createClient();
+    const userClient = await createClient();
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await userClient.auth.getUser();
 
     if (!user) {
       if (isDevPlaceholder()) {
@@ -192,9 +192,17 @@ export async function submitOnboardingAction(data: {
       };
     }
 
-    // 1. Création de l'établissement dans la table schools avec ID pré-généré (évite le blocage RLS RETURNING)
+    // Client administrateur privilégié pour initialiser le premier établissement sans blocage RLS
+    let adminSupabase = userClient;
+    try {
+      adminSupabase = createAdminClient();
+    } catch {
+      adminSupabase = userClient;
+    }
+
+    // 1. Création de l'établissement dans la table schools avec ID pré-généré
     const newSchoolId = crypto.randomUUID();
-    const { error: schoolError } = await supabase
+    const { error: schoolError } = await adminSupabase
       .from("schools")
       .insert({
         id: newSchoolId,
@@ -227,14 +235,22 @@ export async function submitOnboardingAction(data: {
       };
     }
 
-    // 2. Rattachement du profil de direction à la nouvelle école
-    const { error: updateProfileError } = await supabase
+    // 2. Rattachement du profil de direction à la nouvelle école (upsert garantissant la création si absent)
+    const userMeta = user.user_metadata || {};
+    const firstName = userMeta.first_name || "Administrateur";
+    const lastName = userMeta.last_name || "Direction";
+
+    const { error: updateProfileError } = await adminSupabase
       .from("profiles")
-      .update({
+      .upsert({
+        id: user.id,
         school_id: newSchoolId,
         role: "direction",
-      })
-      .eq("id", user.id);
+        first_name: firstName,
+        last_name: lastName,
+        email: user.email || "",
+        is_active: true,
+      });
 
     if (updateProfileError && !isDevPlaceholder()) {
       return {
@@ -244,7 +260,7 @@ export async function submitOnboardingAction(data: {
 
     // 3. Initialisation de l'année scolaire en cours (2026-2027)
     const academicYearId = crypto.randomUUID();
-    const { error: yearError } = await supabase
+    const { error: yearError } = await adminSupabase
       .from("academic_years")
       .insert({
         id: academicYearId,
@@ -258,7 +274,7 @@ export async function submitOnboardingAction(data: {
     // 4. Initialisation des périodes académiques par défaut
     if (!yearError) {
       if (parsed.data.periodType === "trimestre") {
-        await supabase.from("periods").insert([
+        await adminSupabase.from("periods").insert([
           {
             school_id: newSchoolId,
             academic_year_id: academicYearId,
@@ -291,7 +307,7 @@ export async function submitOnboardingAction(data: {
           },
         ]);
       } else {
-        await supabase.from("periods").insert([
+        await adminSupabase.from("periods").insert([
           {
             school_id: newSchoolId,
             academic_year_id: academicYearId,

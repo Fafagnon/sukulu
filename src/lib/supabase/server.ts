@@ -25,3 +25,39 @@ export async function createClient() {
     },
   });
 }
+
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import fs from "fs";
+import path from "path";
+
+function getServiceRoleKey(): string {
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return process.env.SUPABASE_SERVICE_ROLE_KEY;
+  }
+  try {
+    const envPath = path.resolve(process.cwd(), ".env.local");
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, "utf-8");
+      const match = content.match(/SUPABASE_SERVICE_ROLE_KEY\s*=\s*(.+)/);
+      if (match && match[1]) {
+        return match[1].trim();
+      }
+    }
+  } catch {}
+  return (
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    "placeholder-key"
+  );
+}
+
+export function createAdminClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://hmzatrkgjmkxdavznyyw.supabase.co";
+  const serviceRoleKey = getServiceRoleKey();
+
+  return createSupabaseClient<Database>(supabaseUrl, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}
