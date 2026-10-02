@@ -185,7 +185,11 @@ ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "schools_select_policy" ON public.schools
   FOR SELECT
   TO authenticated
-  USING (id = public.current_school_id());
+  USING (
+    id = public.current_school_id()
+    OR public.current_school_id() IS NULL
+    OR id IN (SELECT school_id FROM public.profiles WHERE id = auth.uid())
+  );
 
 CREATE POLICY "schools_insert_policy" ON public.schools
   FOR INSERT
@@ -195,8 +199,14 @@ CREATE POLICY "schools_insert_policy" ON public.schools
 CREATE POLICY "schools_update_policy" ON public.schools
   FOR UPDATE
   TO authenticated
-  USING (id = public.current_school_id())
-  WITH CHECK (id = public.current_school_id());
+  USING (
+    id = public.current_school_id()
+    OR id IN (SELECT school_id FROM public.profiles WHERE id = auth.uid())
+  )
+  WITH CHECK (
+    id = public.current_school_id()
+    OR id IN (SELECT school_id FROM public.profiles WHERE id = auth.uid())
+  );
 
 -- Politiques pour 'profiles' : L'utilisateur accède à son propre profil ou aux membres de son école
 CREATE POLICY "profiles_isolation_policy" ON public.profiles

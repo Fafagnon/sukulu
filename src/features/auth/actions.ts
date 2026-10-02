@@ -192,10 +192,12 @@ export async function submitOnboardingAction(data: {
       };
     }
 
-    // 1. Création de l'établissement dans la table schools
-    const { data: schoolData, error: schoolError } = await supabase
+    // 1. Création de l'établissement dans la table schools avec ID pré-généré (évite le blocage RLS RETURNING)
+    const newSchoolId = crypto.randomUUID();
+    const { error: schoolError } = await supabase
       .from("schools")
       .insert({
+        id: newSchoolId,
         name: parsed.data.schoolName.trim(),
         short_name: parsed.data.schoolCode.trim().toUpperCase(),
         code: parsed.data.schoolCode.trim().toUpperCase(),
@@ -209,11 +211,9 @@ export async function submitOnboardingAction(data: {
           grading_scale: 20,
         },
         status: "active",
-      })
-      .select("id")
-      .single();
+      });
 
-    if (schoolError || !schoolData) {
+    if (schoolError) {
       if (schoolError?.code === "23505") {
         return {
           error: "Ce code d'établissement est déjà utilisé. Veuillez en choisir un autre (ex: CPL2, ND-LOME).",
@@ -231,7 +231,7 @@ export async function submitOnboardingAction(data: {
     const { error: updateProfileError } = await supabase
       .from("profiles")
       .update({
-        school_id: schoolData.id,
+        school_id: newSchoolId,
         role: "direction",
       })
       .eq("id", user.id);
@@ -243,25 +243,25 @@ export async function submitOnboardingAction(data: {
     }
 
     // 3. Initialisation de l'année scolaire en cours (2026-2027)
-    const { data: academicYear } = await supabase
+    const academicYearId = crypto.randomUUID();
+    const { error: yearError } = await supabase
       .from("academic_years")
       .insert({
-        school_id: schoolData.id,
+        id: academicYearId,
+        school_id: newSchoolId,
         name: "2026-2027",
         start_date: "2026-09-01",
         end_date: "2027-06-30",
         is_active: true,
-      })
-      .select("id")
-      .single();
+      });
 
     // 4. Initialisation des périodes académiques par défaut
-    if (academicYear) {
+    if (!yearError) {
       if (parsed.data.periodType === "trimestre") {
         await supabase.from("periods").insert([
           {
-            school_id: schoolData.id,
-            academic_year_id: academicYear.id,
+            school_id: newSchoolId,
+            academic_year_id: academicYearId,
             name: "1er Trimestre",
             type: "trimestre",
             order_index: 1,
@@ -270,31 +270,31 @@ export async function submitOnboardingAction(data: {
             status: "open",
           },
           {
-            school_id: schoolData.id,
-            academic_year_id: academicYear.id,
+            school_id: newSchoolId,
+            academic_year_id: academicYearId,
             name: "2ème Trimestre",
             type: "trimestre",
             order_index: 2,
             start_date: "2027-01-05",
             end_date: "2027-03-31",
-            status: "open",
+            status: "locked",
           },
           {
-            school_id: schoolData.id,
-            academic_year_id: academicYear.id,
+            school_id: newSchoolId,
+            academic_year_id: academicYearId,
             name: "3ème Trimestre",
             type: "trimestre",
             order_index: 3,
             start_date: "2027-04-10",
             end_date: "2027-06-30",
-            status: "open",
+            status: "locked",
           },
         ]);
       } else {
         await supabase.from("periods").insert([
           {
-            school_id: schoolData.id,
-            academic_year_id: academicYear.id,
+            school_id: newSchoolId,
+            academic_year_id: academicYearId,
             name: "1er Semestre",
             type: "semestre",
             order_index: 1,
@@ -303,14 +303,14 @@ export async function submitOnboardingAction(data: {
             status: "open",
           },
           {
-            school_id: schoolData.id,
-            academic_year_id: academicYear.id,
+            school_id: newSchoolId,
+            academic_year_id: academicYearId,
             name: "2ème Semestre",
             type: "semestre",
             order_index: 2,
             start_date: "2027-02-15",
             end_date: "2027-06-30",
-            status: "open",
+            status: "locked",
           },
         ]);
       }
