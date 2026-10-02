@@ -7,8 +7,10 @@ export type Json =
   | Json[];
 
 export type UserRole = "superadmin" | "direction" | "enseignant" | "parent";
+export type PeriodType = "trimestre" | "semestre";
+export type PeriodStatus = "open" | "review" | "locked";
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       schools: {
@@ -48,11 +50,29 @@ export interface Database {
           updated_at?: string;
           deleted_at?: string | null;
         };
-        Update: Partial<Database["public"]["Tables"]["schools"]["Insert"]>;
+        Update: {
+          id?: string;
+          name?: string;
+          short_name?: string | null;
+          code?: string;
+          logo_url?: string | null;
+          address?: string | null;
+          city?: string | null;
+          country?: string;
+          phone?: string | null;
+          email?: string | null;
+          currency?: string;
+          academic_settings?: Json | null;
+          status?: "active" | "inactive" | "suspended";
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string | null;
+        };
+        Relationships: [];
       };
       profiles: {
         Row: {
-          id: string; // Fk to auth.users.id
+          id: string;
           school_id: string;
           role: UserRole;
           first_name: string;
@@ -68,7 +88,7 @@ export interface Database {
         Insert: {
           id: string;
           school_id: string;
-          role: UserRole;
+          role?: UserRole;
           first_name: string;
           last_name: string;
           phone?: string | null;
@@ -79,13 +99,35 @@ export interface Database {
           updated_at?: string;
           deleted_at?: string | null;
         };
-        Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
+        Update: {
+          id?: string;
+          school_id?: string;
+          role?: UserRole;
+          first_name?: string;
+          last_name?: string;
+          phone?: string | null;
+          email?: string;
+          avatar_url?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "profiles_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       academic_years: {
         Row: {
           id: string;
           school_id: string;
-          name: string; // e.g. "2026-2027"
+          name: string;
           start_date: string;
           end_date: string;
           is_active: boolean;
@@ -102,17 +144,35 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
-        Update: Partial<Database["public"]["Tables"]["academic_years"]["Insert"]>;
+        Update: {
+          id?: string;
+          school_id?: string;
+          name?: string;
+          start_date?: string;
+          end_date?: string;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "academic_years_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       periods: {
         Row: {
           id: string;
           school_id: string;
           academic_year_id: string;
-          name: string; // e.g. "Trimestre 1"
-          type: "trimestre" | "semestre";
+          name: string;
+          type: PeriodType;
           order_index: number;
-          status: "open" | "review" | "locked";
+          status: PeriodStatus;
           start_date: string;
           end_date: string;
           created_at: string;
@@ -122,24 +182,51 @@ export interface Database {
           school_id: string;
           academic_year_id: string;
           name: string;
-          type?: "trimestre" | "semestre";
+          type?: PeriodType;
           order_index: number;
-          status?: "open" | "review" | "locked";
+          status?: PeriodStatus;
           start_date: string;
           end_date: string;
           created_at?: string;
         };
-        Update: Partial<Database["public"]["Tables"]["periods"]["Insert"]>;
+        Update: {
+          id?: string;
+          school_id?: string;
+          academic_year_id?: string;
+          name?: string;
+          type?: PeriodType;
+          order_index?: number;
+          status?: PeriodStatus;
+          start_date?: string;
+          end_date?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "periods_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "periods_academic_year_id_fkey";
+            columns: ["academic_year_id"];
+            isOneToOne: false;
+            referencedRelation: "academic_years";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       classes: {
         Row: {
           id: string;
           school_id: string;
           academic_year_id: string;
-          name: string; // e.g. "6ème A"
-          cycle: string; // e.g. "Collège"
-          level: string; // e.g. "6ème"
-          series: string | null; // e.g. "A4", "C", "D"
+          name: string;
+          cycle: string;
+          level: string;
+          series: string | null;
           capacity: number | null;
           created_at: string;
           updated_at: string;
@@ -156,7 +243,34 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
-        Update: Partial<Database["public"]["Tables"]["classes"]["Insert"]>;
+        Update: {
+          id?: string;
+          school_id?: string;
+          academic_year_id?: string;
+          name?: string;
+          cycle?: string;
+          level?: string;
+          series?: string | null;
+          capacity?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "classes_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "classes_academic_year_id_fkey";
+            columns: ["academic_year_id"];
+            isOneToOne: false;
+            referencedRelation: "academic_years";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       audit_logs: {
         Row: {
@@ -186,7 +300,33 @@ export interface Database {
           created_at?: string;
         };
         Update: never;
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          }
+        ];
       };
     };
+    Views: Record<string, never>;
+    Functions: {
+      current_school_id: {
+        Args: Record<PropertyKey, never>;
+        Returns: string;
+      };
+      current_user_role: {
+        Args: Record<PropertyKey, never>;
+        Returns: UserRole;
+      };
+    };
+    Enums: {
+      user_role: UserRole;
+      period_type: PeriodType;
+      period_status: PeriodStatus;
+    };
+    CompositeTypes: Record<string, never>;
   };
-}
+};

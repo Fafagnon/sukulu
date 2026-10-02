@@ -117,6 +117,11 @@ Le MVP doit comprendre :
 
 ### Administration
 
+- inscription et création de l'établissement (onboarding école) ;
+- connexion unifiée multi-rôles (Direction, Enseignant, Parent) ;
+- aiguillage automatique post-connexion selon le rôle de l'utilisateur ;
+- réinitialisation et gestion sécurisée des mots de passe ;
+- middleware de protection des routes et contrôle d'accès ;
 - gestion de l'établissement ;
 - gestion des utilisateurs ;
 - gestion des rôles ;
@@ -2179,31 +2184,29 @@ Un PDF généré ne doit jamais afficher des données provenant d'un autre élè
 
 # 70. Roadmap de développement
 
-## Phase 1 — Fondation
+## Phase 0 — Socle technique, Design System & Multi-tenant
 
-- projet ;
-- Supabase ;
-- authentification ;
-- établissements ;
-- rôles ;
-- RLS ;
-- architecture Next.js ;
-- architecture Flutter ;
-- design system.
+- initialisation projet Next.js TypeScript strict ;
+- design tokens SUKULU (Bleu nuit, Orange, sans artifice AI) ;
+- composants atomiques et composites UI (boutons, inputs, badges, empty states, toasts) ;
+- squelettes de chargement spécialisés anti-CLS (TableSkeleton, CardSkeleton, FormSkeleton) ;
+- schéma PostgreSQL initial, RLS et fonctions de contexte de session (`current_school_id()`).
 
-## Phase 2 — Structure scolaire
+## Phase 1 — Authentification, Onboarding & Contrôle d'accès
 
-- années ;
-- périodes ;
-- cycles ;
-- niveaux ;
-- séries ;
-- classes ;
-- groupes ;
-- matières ;
-- enseignants ;
-- affectations ;
-- emplois du temps (créneaux horaires, classes, enseignants).
+- flux d'onboarding établissement (création atomique école + compte Direction) ;
+- page de connexion unifiée avec gestion d'erreurs et sessions sécurisées ;
+- middleware de protection des routes et aiguillage dynamique par rôle (`/admin`, `/teacher`, `/parent`) ;
+- réinitialisation de mot de passe et sécurité des sessions.
+
+## Phase 2 — Structure scolaire & Emplois du temps
+
+- années scolaires (activation unique) ;
+- périodes (trimestres/semestres avec statuts ouvert/validation/verrouillé) ;
+- cycles, niveaux, séries, classes et groupes ;
+- catalogue des matières et coefficients par classe ;
+- enseignants et affectations pédagogiques ;
+- emplois du temps par créneaux horaires (jour, heures, classe, enseignant, salle) avec détection des conflits.
 
 ## Phase 3 — SIS
 
