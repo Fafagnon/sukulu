@@ -159,11 +159,18 @@ export async function submitOnboardingAction(data: {
   schoolCode: string;
   city: string;
   country: string;
-  currency: string;
-  periodType: "trimestre" | "semestre";
-  priorities: string[];
+  currency?: string;
+  periodType?: "trimestre" | "semestre";
+  priorities?: string[];
 }) {
-  const parsed = onboardingSchema.safeParse(data);
+  const payload = {
+    ...data,
+    currency: data.currency || "XOF",
+    periodType: data.periodType || "trimestre",
+    priorities: data.priorities || [],
+  };
+
+  const parsed = onboardingSchema.safeParse(payload);
   if (!parsed.success) {
     return {
       error: parsed.error.issues[0]?.message || "Données de configuration invalides.",

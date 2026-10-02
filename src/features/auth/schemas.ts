@@ -35,11 +35,11 @@ export const onboardingSchema = z.object({
     .min(3, "Le nom de l'établissement doit comporter au moins 3 caractères."),
   schoolCode: z
     .string()
-    .min(2, "Le code court doit comporter au moins 2 caractères.")
-    .max(10, "Le code court ne peut dépasser 10 caractères.")
+    .min(2, "Le sigle court doit comporter au moins 2 caractères.")
+    .max(10, "Le sigle court ne peut dépasser 10 caractères.")
     .toUpperCase(),
   city: z.string().min(2, "La ville est requise."),
-  country: z.string().default("Togo"),
+  country: z.string().min(2, "Veuillez sélectionner votre pays."),
   currency: z.string().default("XOF"),
   periodType: z.enum(["trimestre", "semestre"]).default("trimestre"),
   priorities: z.array(z.string()).default([]),
