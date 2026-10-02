@@ -1,0 +1,40 @@
+Phase 1 : Socle Technique, Multi-tenant & Configuration Académique
+Objectif : Poser les fondations sécurisées de la plateforme et permettre le paramétrage complet d'une école.
+Ce qui est construit :
+Initialisation du projet (Next.js, Tailwind CSS, Supabase / PostgreSQL).
+Système d'authentification et isolation multi-tenant stricte par Row Level Security (RLS via school_id).
+Matrice des rôles et permissions (Super-admin, Direction, Enseignant, Parent).
+Module d'administration académique : création de l'école, années scolaires, périodes (trimestres/semestres), cycles, niveaux, séries, classes, matières et coefficients.
+Livrable clé : Une école peut être créée et entièrement paramétrée par la direction en toute sécurité.
+Phase 2 : Utilisateurs, Dossiers Élèves & Affectations
+Objectif : Gérer la communauté scolaire et structurer la rentrée.
+Ce qui est construit :
+Gestion des comptes utilisateurs (direction, enseignants, parents/tuteurs).
+Fiches élèves complètes, coordonnées des responsables légaux et liens de parenté.
+Inscriptions annuelles et affectations des élèves aux classes.
+Affectations pédagogiques des enseignants (qui enseigne quelle matière dans quelle classe).
+Livrable clé : L'école dispose de son annuaire complet, ses classes sont peuplées et les enseignants sont rattachés à leurs cours.
+Phase 3 : Pédagogie, Vie Scolaire & Mode Offline Ciblé
+Objectif : Outiller le quotidien des enseignants en classe, même en cas de mauvaise connexion Internet.
+Ce qui est construit :
+Module des présences (appel journalier/par séance, statuts d'absence/retard, justifications).
+Module d'évaluations et saisie des notes (interrogations, devoirs, examens).
+Moteur de calcul automatique (moyennes pondérées par matière, moyenne générale, rangs, gestion des ex æquo).
+PWA & file d'attente locale (IndexedDB) pour permettre la saisie des présences et des notes hors-ligne, avec synchronisation au retour du réseau.
+Livrable clé : Les enseignants peuvent faire l'appel et saisir leurs notes sur smartphone ou PC, en ligne ou hors connexion.
+Phase 4 : Finances Scolaires Manuelles & Génération des Bulletins PDF
+Objectif : Assurer la viabilité financière de l'établissement et délivrer les documents officiels.
+Ce qui est construit :
+Module financier V1 : plans de frais, échéanciers de scolarité, suivi des créances par élève.
+Enregistrement des paiements manuels (espèces, virements, Mobile Money constaté), gestion des soldes/impayés et génération automatique de reçus PDF avec numéro unique.
+Module des bulletins : génération automatique des bulletins PDF via react-pdf, circuit de validation, apposition des signatures et snapshot historique figé (données archivées inviolables).
+Livrable clé : Les encaissements produisent des reçus officiels et les bulletins périodiques sont générés, signés et verrouillés.
+Phase 5 : Espaces Dédiés, Outils de Pilotage & Validation du Pilote
+Objectif : Ouvrir les accès aux différents profils, offrir les outils de pilotage et valider les conditions réelles du pilote.
+Ce qui est construit :
+Espace Enseignant optimisé et Espace Parent (consultation des résultats, présences, bulletins et état financier des enfants).
+Tableau de bord Direction (indicateurs clés d'effectifs, d'assiduité et de recouvrement financier).
+Outils d'import/export Excel normalisés et génération de messages WhatsApp pré-remplis.
+Journal d'audit complet (traçabilité des modifications sensibles).
+Tests d'étanchéité multi-tenant, tests de charge et scénarios réels de sortie V1.
+Livrable clé : Une application prête à être déployée et testée en production dans la première école pilote au Togo.
