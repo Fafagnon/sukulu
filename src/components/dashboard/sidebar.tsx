@@ -19,6 +19,7 @@ import {
   UserCheck,
   Contact,
   CheckSquare,
+  Coins,
 } from "lucide-react";
 import { signOutAction } from "@/features/auth/actions";
 
@@ -79,6 +80,11 @@ const adminNavItems = [
     label: "Notes & Résultats",
     href: "/admin/grades",
     icon: ClipboardCheck,
+  },
+  {
+    label: "Trésorerie & Frais",
+    href: "/admin/payments",
+    icon: Coins,
   },
 ];
 

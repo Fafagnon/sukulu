@@ -14,6 +14,7 @@ export type EnrollmentStatus = "enrolled" | "completed" | "dropped" | "transferr
 export type TeacherStatus = "active" | "inactive" | "on_leave";
 export type Gender = "M" | "F";
 export type AttendanceStatus = "present" | "absent" | "late" | "excused";
+export type PaymentMethod = "cash" | "mobile_money" | "bank_transfer" | "cheque" | "other";
 
 export type Database = {
   public: {
@@ -1015,6 +1016,193 @@ export type Database = {
           }
         ];
       };
+      fee_structures: {
+        Row: {
+          id: string;
+          school_id: string;
+          academic_year_id: string;
+          class_id: string | null;
+          name: string;
+          amount: number;
+          due_date: string | null;
+          is_mandatory: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          academic_year_id: string;
+          class_id?: string | null;
+          name: string;
+          amount: number;
+          due_date?: string | null;
+          is_mandatory?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          academic_year_id?: string;
+          class_id?: string | null;
+          name?: string;
+          amount?: number;
+          due_date?: string | null;
+          is_mandatory?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "fee_structures_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "fee_structures_academic_year_id_fkey";
+            columns: ["academic_year_id"];
+            isOneToOne: false;
+            referencedRelation: "academic_years";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "fee_structures_class_id_fkey";
+            columns: ["class_id"];
+            isOneToOne: false;
+            referencedRelation: "classes";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      payment_receipt_counters: {
+        Row: {
+          school_id: string;
+          year_prefix: string;
+          last_number: number;
+          updated_at: string;
+        };
+        Insert: {
+          school_id: string;
+          year_prefix: string;
+          last_number?: number;
+          updated_at?: string;
+        };
+        Update: {
+          school_id?: string;
+          year_prefix?: string;
+          last_number?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payment_receipt_counters_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      payments: {
+        Row: {
+          id: string;
+          school_id: string;
+          academic_year_id: string;
+          student_id: string;
+          enrollment_id: string | null;
+          fee_structure_id: string | null;
+          amount: number;
+          payment_date: string;
+          payment_method: PaymentMethod;
+          reference: string | null;
+          receipt_number: string;
+          notes: string | null;
+          recorded_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          academic_year_id: string;
+          student_id: string;
+          enrollment_id?: string | null;
+          fee_structure_id?: string | null;
+          amount: number;
+          payment_date?: string;
+          payment_method?: PaymentMethod;
+          reference?: string | null;
+          receipt_number: string;
+          notes?: string | null;
+          recorded_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          academic_year_id?: string;
+          student_id?: string;
+          enrollment_id?: string | null;
+          fee_structure_id?: string | null;
+          amount?: number;
+          payment_date?: string;
+          payment_method?: PaymentMethod;
+          reference?: string | null;
+          receipt_number?: string;
+          notes?: string | null;
+          recorded_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payments_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payments_academic_year_id_fkey";
+            columns: ["academic_year_id"];
+            isOneToOne: false;
+            referencedRelation: "academic_years";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payments_student_id_fkey";
+            columns: ["student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payments_fee_structure_id_fkey";
+            columns: ["fee_structure_id"];
+            isOneToOne: false;
+            referencedRelation: "fee_structures";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payments_enrollment_id_fkey";
+            columns: ["enrollment_id"];
+            isOneToOne: false;
+            referencedRelation: "enrollments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payments_recorded_by_fkey";
+            columns: ["recorded_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -1025,6 +1213,13 @@ export type Database = {
       current_user_role: {
         Args: Record<PropertyKey, never>;
         Returns: UserRole;
+      };
+      generate_receipt_number: {
+        Args: {
+          p_school_id: string;
+          p_year_prefix: string;
+        };
+        Returns: string;
       };
     };
     Enums: {

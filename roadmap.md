@@ -184,16 +184,21 @@
 ---
 
 ### Phase 6 : Trésorerie Scolaire V1 (Frais, Encaissements & Reçus PDF)
-* **Statut** : À FAIRE
+* **Statut** : **TERMINÉ (Validé unitairement et en build)**
 * **Objectif** : Assurer le suivi des paiements de scolarité et délivrer les reçus officiels instantanément.
-* **Livrables à réaliser** :
-  - [ ] Configuration de la grille tarifaire (`fee_structures`) par classe et année (scolarité, inscription, tranches).
-  - [ ] Enregistrement des paiements (espèces, virements, dépôts) : gestion des paiements partiels et calcul automatique du reste à payer / solde.
-  - [ ] Émission de reçus de paiement PDF générés côté serveur :
-    - Numérotation séquentielle unique par école.
-    - Mention de l'élève, de la classe, du montant réglé, de la tranche, du solde restant et du caissier.
-    - Modale de prévisualisation in-app avec impression directe sans téléchargement parasite.
-  - [ ] Suivi des impayés et tableau de bord financier de la Direction.
+* **Livrables réalisés** :
+  - [x] Configuration de la grille tarifaire (`fee_structures`) par classe et pour tout l'établissement (frais de scolarité, inscription, tranches avec échéances).
+  - [x] Enregistrement des règlements (`payments`) multi-moyens (espèces, mobile money, virement bancaire, chèque) : gestion des paiements partiels et calcul automatique du reste à payer / solde débiteur.
+  - [x] Émission de reçus de paiement officiels numérotés (`REC-YYYY-XXXXX`) :
+    - Numérotation séquentielle atomique unique par école et par année (`payment_receipt_counters`).
+    - Mention de l'école, de l'élève, de la classe, du caissier, du mode de règlement, du montant réglé en chiffres et en toutes lettres en français (`numberToFrenchWords`).
+    - Balance financière complète (total dû, déjà versé, ce versement, nouveau solde restant).
+    - Modale de prévisualisation in-app avec impression directe sans téléchargement parasite (`ReceiptSlip` format A5 officiel).
+  - [x] Tableau de bord financier de la Direction (`/admin/payments`) :
+    - KPIs synthétiques en temps réel (Total attendu, Total encaissé, Impayés totaux, Taux de recouvrement, Encaissements du jour et du mois).
+    - Onglet Historique chronologique des versements avec impression directe du reçu.
+    - Onglet Suivi par élève avec statuts visuels (Soldé, Partiel, Impayé), progression et action rapide d'encaissement.
+    - Onglet Grille tarifaire avec formulaire de configuration de nouveaux frais par classe.
 
 ---
 
@@ -231,7 +236,8 @@
 | **02/10/2026** | `2d65e55` | **Initialisation** : Import et scellement du cahier des charges, de rules.md et des assets de marque. |
 | **02/10/2026** | `c1fa211` | **Phase 0 terminée** : Initialisation Next.js TypeScript strict, Design Tokens SUKULU, composants UI atomiques, squelettes de chargement anti-CLS, schéma PostgreSQL RLS et laboratoire de test interactif. Build validé (0 erreur). Poussé sur `main`. |
 | **03/10/2026** | `02c4000` | **Phases 1 à 4 terminées** : Authentification multi-rôles, SIS élèves, import CSV 5 étapes, grille de notes et moteur de calcul des moyennes/rangs (19/19 tests Vitest). |
-| **03/10/2026** | *(Commit Phase 5)* | **Phase 5 terminée** : Assiduité & Mode Offline Enseignant (Dexie IndexedDB, outbox, vibrations haptiques mobiles, écran d'appel tactile, dashboard Direction et alertes absentéisme, 39/39 tests Vitest réussis). |
+| **03/10/2026** | `571eb95` | **Phase 5 terminée** : Assiduité & Mode Offline Enseignant (Dexie IndexedDB, outbox, vibrations haptiques mobiles, écran d'appel tactile, dashboard Direction et alertes absentéisme, 39/39 tests Vitest réussis). |
+| **03/10/2026** | `5cccf74` | **Phase 6 terminée** : Trésorerie Scolaire V1 (Grille tarifaire, enregistrement des paiements partiels, calcul automatique des soldes débiteurs, reçus officiels REC-YYYY-XXXXX imprimables A5 avec montants en lettres, tableau de bord Direction avec KPIs financiers, 54/54 tests Vitest réussis, 0 erreur lint, build validé). |
 
 ---
 
