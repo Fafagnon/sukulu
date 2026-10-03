@@ -13,6 +13,7 @@ export type StudentStatus = "active" | "archived" | "graduated" | "transferred";
 export type EnrollmentStatus = "enrolled" | "completed" | "dropped" | "transferred" | "repeating";
 export type TeacherStatus = "active" | "inactive" | "on_leave";
 export type Gender = "M" | "F";
+export type AttendanceStatus = "present" | "absent" | "late" | "excused";
 
 export type Database = {
   public: {
@@ -933,6 +934,83 @@ export type Database = {
             columns: ["student_id"];
             isOneToOne: false;
             referencedRelation: "students";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      attendance_records: {
+        Row: {
+          id: string;
+          school_id: string;
+          academic_year_id: string;
+          class_id: string;
+          student_id: string;
+          timetable_slot_id: string | null;
+          date: string;
+          status: AttendanceStatus;
+          arrival_time: string | null;
+          reason: string | null;
+          recorded_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          academic_year_id: string;
+          class_id: string;
+          student_id: string;
+          timetable_slot_id?: string | null;
+          date?: string;
+          status: AttendanceStatus;
+          arrival_time?: string | null;
+          reason?: string | null;
+          recorded_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          academic_year_id?: string;
+          class_id?: string;
+          student_id?: string;
+          timetable_slot_id?: string | null;
+          date?: string;
+          status?: AttendanceStatus;
+          arrival_time?: string | null;
+          reason?: string | null;
+          recorded_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "attendance_records_class_id_fkey";
+            columns: ["class_id"];
+            isOneToOne: false;
+            referencedRelation: "classes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "attendance_records_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "attendance_records_student_id_fkey";
+            columns: ["student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "attendance_records_timetable_slot_id_fkey";
+            columns: ["timetable_slot_id"];
+            isOneToOne: false;
+            referencedRelation: "timetable_slots";
             referencedColumns: ["id"];
           }
         ];

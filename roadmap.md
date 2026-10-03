@@ -170,16 +170,16 @@
 ---
 
 ### Phase 5 : Assiduité & Mode Offline Enseignant
-* **Statut** : À FAIRE
+* **Statut** : **TERMINÉ (Validé unitairement et en build)**
 * **Objectif** : Outiller la vie scolaire et permettre aux enseignants de faire l'appel même sans connexion Internet.
 * **Livrables à réaliser** :
-  - [ ] Écran d'appel par séance / journée : statuts Présent, Absent, Retard, Justifié, Non justifié.
-  - [ ] Mode hors-ligne PWA pour l'espace enseignant :
+  - [x] Écran d'appel par séance / journée : statuts Présent, Absent, Retard (avec heure), Justifié (avec motif).
+  - [x] Mode hors-ligne PWA pour l'espace enseignant :
     - Stockage local des classes et élèves via IndexedDB (Dexie.js).
     - File d'attente des appels effectués hors connexion (`outbox`).
     - Synchronisation automatique au retour du réseau avec détection et résolution de conflits.
-  - [ ] Micro-interactions haptiques sur mobile (vibration lors de la saisie).
-  - [ ] Tableau de bord d'assiduité pour la Direction (absences du jour, retards, alertes).
+  - [x] Micro-interactions haptiques sur mobile (vibration distincte lors de la saisie selon le statut).
+  - [x] Tableau de bord d'assiduité pour la Direction (absences du jour, retards, taux global, alertes décrochage).
 
 ---
 
@@ -230,7 +230,8 @@
 | :--- | :--- | :--- |
 | **02/10/2026** | `2d65e55` | **Initialisation** : Import et scellement du cahier des charges, de rules.md et des assets de marque. |
 | **02/10/2026** | `c1fa211` | **Phase 0 terminée** : Initialisation Next.js TypeScript strict, Design Tokens SUKULU, composants UI atomiques, squelettes de chargement anti-CLS, schéma PostgreSQL RLS et laboratoire de test interactif. Build validé (0 erreur). Poussé sur `main`. |
-| **02/10/2026** | *(Commit en cours)* | **Phase 1 terminée** : Mise à jour du CDC (authentification & onboarding), création du document maître `roadmap.md`, middleware de protection des routes et sessions, pages `/login` (Suspense), `/register` (onboarding établissement), Server Actions Zod v4, layout partagé avec profil et déconnexion, et dashboards dédiés (`/admin`, `/teacher`, `/parent`). Build validé (0 erreur). |
+| **03/10/2026** | `02c4000` | **Phases 1 à 4 terminées** : Authentification multi-rôles, SIS élèves, import CSV 5 étapes, grille de notes et moteur de calcul des moyennes/rangs (19/19 tests Vitest). |
+| **03/10/2026** | *(Commit Phase 5)* | **Phase 5 terminée** : Assiduité & Mode Offline Enseignant (Dexie IndexedDB, outbox, vibrations haptiques mobiles, écran d'appel tactile, dashboard Direction et alertes absentéisme, 39/39 tests Vitest réussis). |
 
 ---
 

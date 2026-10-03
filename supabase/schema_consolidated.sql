@@ -379,6 +379,31 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
 
 CREATE INDEX IF NOT EXISTS idx_audit_logs_school ON public.audit_logs(school_id, created_at DESC);
 
+-- 3.17. Assiduité et Présences (attendance_records)
+CREATE TABLE IF NOT EXISTS public.attendance_records (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
+  academic_year_id UUID NOT NULL REFERENCES public.academic_years(id) ON DELETE CASCADE,
+  class_id UUID NOT NULL REFERENCES public.classes(id) ON DELETE CASCADE,
+  student_id UUID NOT NULL REFERENCES public.students(id) ON DELETE CASCADE,
+  timetable_slot_id UUID REFERENCES public.timetable_slots(id) ON DELETE SET NULL,
+  date DATE NOT NULL DEFAULT CURRENT_DATE,
+  status TEXT NOT NULL CHECK (status IN ('present', 'absent', 'late', 'excused')),
+  arrival_time TIME,
+  reason TEXT,
+  recorded_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT uq_attendance_student_session UNIQUE NULLS NOT DISTINCT (school_id, student_id, date, timetable_slot_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_attendance_school_date ON public.attendance_records(school_id, date);
+CREATE INDEX IF NOT EXISTS idx_attendance_class_date ON public.attendance_records(class_id, date);
+CREATE INDEX IF NOT EXISTS idx_attendance_student ON public.attendance_records(student_id, school_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_status ON public.attendance_records(school_id, status, date);
+CREATE INDEX IF NOT EXISTS idx_attendance_academic_year ON public.attendance_records(academic_year_id);
+
+
 -- ------------------------------------------------------------------------------
 -- 4. FONCTIONS DE CONTEXTE ET DE SÉCURITÉ (SECURITY DEFINER)
 -- ------------------------------------------------------------------------------
@@ -537,6 +562,7 @@ ALTER TABLE public.teacher_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.enrollments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.assessments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.grades ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.attendance_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- ------------------------------------------------------------------------------
@@ -767,6 +793,60 @@ CREATE POLICY "audit_logs_write_policy" ON public.audit_logs
   FOR ALL TO authenticated
   USING (false)
   WITH CHECK (false);
+
+-- 6.8. Table 'attendance_records' (Lecture membres école, écriture Direction + Enseignants)
+DROP POLICY IF EXISTS "attendance_select_policy" ON public.attendance_records;
+CREATE POLICY "attendance_select_policy" ON public.attendance_records
+  FOR SELECT TO authenticated
+  USING (school_id = public.current_school_id());
+
+DROP POLICY IF EXISTS "attendance_write_policy" ON public.attendance_records;
+CREATE POLICY "attendance_write_policy" ON public.attendance_records
+  FOR ALL TO authenticated
+  USING (
+    school_id = public.current_school_id()
+    AND (
+      public.has_any_role('direction', 'superadmin')
+      OR (
+        public.has_any_role('enseignant')
+        AND (
+          recorded_by = auth.uid()
+          OR EXISTS (
+            SELECT 1 FROM public.timetable_slots ts
+            WHERE ts.id = attendance_records.timetable_slot_id
+              AND ts.teacher_id = auth.uid()
+          )
+          OR EXISTS (
+            SELECT 1 FROM public.class_subjects cs
+            WHERE cs.class_id = attendance_records.class_id
+              AND cs.teacher_id = auth.uid()
+          )
+        )
+      )
+    )
+  )
+  WITH CHECK (
+    school_id = public.current_school_id()
+    AND (
+      public.has_any_role('direction', 'superadmin')
+      OR (
+        public.has_any_role('enseignant')
+        AND (
+          recorded_by = auth.uid()
+          OR EXISTS (
+            SELECT 1 FROM public.timetable_slots ts
+            WHERE ts.id = attendance_records.timetable_slot_id
+              AND ts.teacher_id = auth.uid()
+          )
+          OR EXISTS (
+            SELECT 1 FROM public.class_subjects cs
+            WHERE cs.class_id = attendance_records.class_id
+              AND cs.teacher_id = auth.uid()
+          )
+        )
+      )
+    )
+  );
 
 -- ------------------------------------------------------------------------------
 -- 7. ATTRIBUTION DES DROITS POSTGRESQL AUX RÔLES SUPABASE

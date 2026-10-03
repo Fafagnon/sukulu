@@ -18,6 +18,7 @@ import {
   Users,
   UserCheck,
   Contact,
+  CheckSquare,
 } from "lucide-react";
 import { signOutAction } from "@/features/auth/actions";
 
@@ -28,11 +29,16 @@ interface SidebarProps {
   userRole: string;
 }
 
-const navItems = [
+const adminNavItems = [
   {
     label: "Tableau de bord",
     href: "/admin",
     icon: LayoutDashboard,
+  },
+  {
+    label: "Assiduité & Présences",
+    href: "/admin/attendance",
+    icon: CheckSquare,
   },
   {
     label: "Élèves & Dossiers",
@@ -73,6 +79,29 @@ const navItems = [
     label: "Notes & Résultats",
     href: "/admin/grades",
     icon: ClipboardCheck,
+  },
+];
+
+const teacherNavItems = [
+  {
+    label: "Mon Espace",
+    href: "/teacher",
+    icon: LayoutDashboard,
+  },
+  {
+    label: "Faire l'Appel",
+    href: "/teacher/attendance",
+    icon: CheckSquare,
+  },
+  {
+    label: "Notes & Résultats",
+    href: "/admin/grades",
+    icon: ClipboardCheck,
+  },
+  {
+    label: "Emplois du temps",
+    href: "/admin/timetable",
+    icon: Clock,
   },
 ];
 
@@ -139,10 +168,10 @@ export function Sidebar({ schoolName, schoolCode, userName, userRole }: SidebarP
           {/* Navigation principale */}
           <nav className="p-3 space-y-1">
             <p className="px-3 py-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-              Gestion Pédagogique
+              {userRole === "enseignant" ? "Espace Enseignant" : "Gestion Pédagogique"}
             </p>
 
-            {navItems.map((item) => {
+            {(userRole === "enseignant" ? teacherNavItems : adminNavItems).map((item) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
               return (
