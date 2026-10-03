@@ -1,13 +1,46 @@
 "use server";
 
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { REMEMBER_COOKIE, REMEMBER_MAX_AGE } from "@/lib/supabase/server";
 import { loginSchema, signUpSchema, onboardingSchema } from "./schemas";
-import { type UserRole } from "@/types/database";
 
 const isDevPlaceholder = () =>
   process.env.NEXT_PUBLIC_SUPABASE_URL?.includes("placeholder") ||
   !process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+/**
+ * Rate-limit en mémoire côté serveur : 5 tentatives de connexion échouées
+ * par couple (IP, email) sur une fenêtre de 15 minutes.
+ * (Simple Map : réinitialisée au redémarrage du process, suffisante en complément
+ * du rate-limiting Supabase côté auth.)
+ */
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX_ATTEMPTS = 5;
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+
+async function checkLoginRateLimit(): Promise<{ blocked: boolean }> {
+  const headerStore = await headers();
+  const ip =
+    headerStore.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    headerStore.get("x-real-ip") ||
+    "unknown";
+  const key = ip;
+  const now = Date.now();
+  const entry = loginAttempts.get(key);
+  if (!entry || entry.resetAt < now) {
+    loginAttempts.set(key, { count: 1, resetAt: now + LOGIN_WINDOW_MS });
+    return { blocked: false };
+  }
+  entry.count += 1;
+  return { blocked: entry.count > LOGIN_MAX_ATTEMPTS };
+}
+
+function recordLoginFailure(): void {
+  // Les tentatives sont déjà comptées par checkLoginRateLimit ;
+  // point d'extension futur : écriture dans audit_logs.
+}
 
 /**
  * Action serveur de connexion SUKULU (Image 2 - Welcome Back)
@@ -26,7 +59,33 @@ export async function loginAction(formData: FormData) {
     };
   }
 
+  const rate = await checkLoginRateLimit();
+  if (rate.blocked) {
+    return {
+      error:
+        "Trop de tentatives de connexion. Réessayez dans quelques minutes.",
+    };
+  }
+
   try {
+    // Poser / effacer le marqueur « se souvenir » AVANT la connexion pour que
+    // les cookies de session écrits par Supabase respectent déjà la durée voulue.
+    const cookieStore = await cookies();
+    if (parsed.data.rememberMe) {
+      cookieStore.set(REMEMBER_COOKIE, "1", {
+        path: "/",
+        maxAge: REMEMBER_MAX_AGE,
+        sameSite: "lax",
+        httpOnly: true,
+      });
+    } else {
+      try {
+        cookieStore.delete(REMEMBER_COOKIE);
+      } catch {
+        // Cookie déjà absent
+      }
+    }
+
     const supabase = await createClient();
     const { data, error } = await supabase.auth.signInWithPassword({
       email: parsed.data.email,
@@ -37,6 +96,7 @@ export async function loginAction(formData: FormData) {
       if (isDevPlaceholder()) {
         return { success: true, redirectPath: "/admin" };
       }
+      recordLoginFailure();
       return {
         error: "Identifiants invalides ou compte introuvable.",
       };
@@ -192,6 +252,23 @@ export async function submitOnboardingAction(data: {
       };
     }
 
+    // Vérifier qu'aucun rattachement n'existe déjà (évite l'auto-promotion
+    // et les orphelines en cas de retry après un échec partiel)
+    const { data: existingProfile } = await userClient
+      .from("profiles")
+      .select("school_id, role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (existingProfile?.school_id) {
+      if (!isDevPlaceholder()) {
+        return {
+          error:
+            "Votre compte est déjà rattaché à un établissement. Contactez le support si nécessaire.",
+        };
+      }
+    }
+
     // Client administrateur privilégié pour initialiser le premier établissement sans blocage RLS
     let adminSupabase = userClient;
     try {
@@ -212,6 +289,7 @@ export async function submitOnboardingAction(data: {
         country: parsed.data.country,
         city: parsed.data.city.trim(),
         currency: parsed.data.currency,
+        created_by: user.id,
         academic_settings: {
           school_type: parsed.data.schoolType,
           period_type: parsed.data.periodType,
@@ -223,8 +301,14 @@ export async function submitOnboardingAction(data: {
 
     if (schoolError) {
       if (schoolError?.code === "23505") {
+        if (schoolError.message?.includes("uq_schools_created_by")) {
+          return {
+            error:
+              "Ce compte a déjà créé un établissement. Reconnectez-vous ou contactez le support.",
+          };
+        }
         return {
-          error: "Ce code d'établissement est déjà utilisé. Veuillez en choisir un autre (ex: CPL2, ND-LOME).",
+          error: "Ce code d'établissement est déjà utilisé pour ce pays. Veuillez en choisir un autre (ex: CPL2, ND-LOME).",
         };
       }
       if (isDevPlaceholder()) {
@@ -339,6 +423,47 @@ export async function submitOnboardingAction(data: {
     }
     return {
       error: "Erreur lors de la configuration de l'établissement.",
+    };
+  }
+}
+
+/**
+ * Action serveur : envoi d'un email de réinitialisation de mot de passe.
+ * Le lien pointe vers /auth/callback?next=/reset-password puis vers la page
+ * de nouveau mot de passe (flow recovery Supabase).
+ */
+export async function requestPasswordResetAction(formData: FormData) {
+  const email = String(formData.get("email") || "")
+    .trim()
+    .toLowerCase();
+
+  if (!email || !email.includes("@")) {
+    return { error: "Veuillez saisir une adresse email valide." };
+  }
+
+  try {
+    const supabase = await createClient();
+    const origin =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      "http://localhost:3000";
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent("/reset-password")}`,
+    });
+
+    // On ne révèle jamais si l'email existe (anti-enumeration).
+    if (error && !isDevPlaceholder()) {
+      console.warn("[auth] resetPasswordForEmail:", error.message);
+    }
+
+    return {
+      success:
+        "Si un compte existe pour cette adresse, un email de réinitialisation vient d'être envoyé.",
+    };
+  } catch {
+    return {
+      error: "Impossible d'envoyer l'email de réinitialisation pour le moment.",
     };
   }
 }

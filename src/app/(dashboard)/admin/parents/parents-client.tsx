@@ -3,15 +3,12 @@
 import * as React from "react";
 import Link from "next/link";
 import {
-  Contact,
   Search,
   Plus,
   Phone,
   Mail,
-  User,
   AlertCircle,
   X,
-  GraduationCap,
 } from "lucide-react";
 import { createParentAction } from "@/features/parents/parent-actions";
 import { Button } from "@/components/ui/button";
@@ -69,13 +66,17 @@ export function ParentsClient({
 }) {
   const router = useRouter();
   const [parents, setParents] = React.useState<ParentItem[]>(initialParents);
+  const [prevInitialParents, setPrevInitialParents] = React.useState(initialParents);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  React.useEffect(() => {
+  // Resynchronisation pendant le rendu (pattern React "adjusting state when props change")
+  // au lieu d'un setState synchrone dans un useEffect.
+  if (prevInitialParents !== initialParents) {
+    setPrevInitialParents(initialParents);
     setParents(initialParents);
-  }, [initialParents]);
+  }
 
   const filteredParents = React.useMemo(() => {
     if (!searchQuery.trim()) return parents;

@@ -1,9 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
 
 import { getAuthenticatedSchoolContext } from "@/lib/auth-context";
+import { logAuditEvent } from "@/lib/audit";
 
 /**
  * 1. Récupère l'annuaire des parents / tuteurs avec leurs enfants rattachés
@@ -93,6 +93,14 @@ export async function createParentAction(formData: FormData) {
       .single();
 
     if (error) throw error;
+
+    void logAuditEvent({
+      schoolId,
+      action: "create",
+      entityType: "parent_profile",
+      entityId: data.id,
+      newData: { first_name: firstName, last_name: lastName, phone },
+    });
 
     revalidatePath("/admin/parents");
     return { success: true, parentId: data.id };

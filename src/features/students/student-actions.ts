@@ -1,10 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
 import { type StudentStatus, type Gender } from "@/types/database";
 
 import { getAuthenticatedSchoolContext } from "@/lib/auth-context";
+import { logAuditEvent } from "@/lib/audit";
 
 /**
  * 1. Génère un matricule élève unique séquentiel : SUK-YYYY-XXXX
@@ -13,16 +13,22 @@ export async function getNextMatricule(yearName?: string): Promise<string> {
   try {
     const { supabase, schoolId } = await getAuthenticatedSchoolContext();
     const currentYear = yearName ? yearName.split("-")[0] : new Date().getFullYear().toString();
-    
-    // Compter le nombre d'élèves déjà enregistrés pour cette école
-    const { count } = await supabase
-      .from("students")
-      .select("*", { count: "exact", head: true })
-      .eq("school_id", schoolId);
 
-    const nextIndex = (count || 0) + 1;
+    // Basé sur le matricule le PLUS ÉLEVÉ existant (et non sur COUNT, qui
+    // casse dès qu'un élève est supprimé/dédoublonné).
+    const prefix = `SUK-${currentYear}-`;
+    const { data: last } = await supabase
+      .from("students")
+      .select("matricule")
+      .eq("school_id", schoolId)
+      .like("matricule", `${prefix}%`)
+      .order("matricule", { ascending: false })
+      .limit(1);
+
+    const lastSuffix = parseInt(last?.[0]?.matricule?.slice(prefix.length) || "0", 10);
+    const nextIndex = (Number.isFinite(lastSuffix) ? lastSuffix : 0) + 1;
     const padded = String(nextIndex).padStart(4, "0");
-    return `SUK-${currentYear}-${padded}`;
+    return `${prefix}${padded}`;
   } catch {
     const currentYear = new Date().getFullYear();
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
@@ -379,6 +385,14 @@ export async function createStudentAction(formData: FormData) {
       }
     }
 
+    void logAuditEvent({
+      schoolId,
+      action: "create",
+      entityType: "student",
+      entityId: newStudent.id,
+      newData: { matricule, first_name: firstName, last_name: lastName },
+    });
+
     revalidatePath("/admin/students");
     return { success: true, studentId: newStudent.id };
   } catch (err: unknown) {
@@ -522,6 +536,14 @@ export async function archiveStudentAction(studentId: string, status: StudentSta
       return { error: "Action réservée à la direction." };
     }
 
+    // Ancien statut pour la traçabilité audit (qui, quand, avant → après)
+    const { data: before } = await supabase
+      .from("students")
+      .select("status, matricule")
+      .eq("id", studentId)
+      .eq("school_id", schoolId)
+      .maybeSingle();
+
     const { error } = await supabase
       .from("students")
       .update({
@@ -532,6 +554,15 @@ export async function archiveStudentAction(studentId: string, status: StudentSta
       .eq("school_id", schoolId);
 
     if (error) throw error;
+
+    void logAuditEvent({
+      schoolId,
+      action: "update_status",
+      entityType: "student",
+      entityId: studentId,
+      oldData: before ? { status: before.status } : null,
+      newData: { status },
+    });
 
     revalidatePath("/admin/students");
     revalidatePath(`/admin/students/${studentId}`);

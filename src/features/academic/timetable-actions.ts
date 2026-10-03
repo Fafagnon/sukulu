@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
 
 const DAYS_NAMES: Record<number, string> = {
   1: "Lundi",
@@ -87,7 +86,9 @@ export async function createTimetableSlotAction(formData: FormData) {
     // =========================================================================
 
     // A) Conflit de Classe : La classe a-t-elle déjà un cours sur ce créneau ?
-    const { data: classConflict } = await supabase
+    // .limit(1) + data[0] : maybeSingle() ERRE dès que plusieurs lignes
+    // correspondent, et l'erreur était ignorée → conflit non détecté.
+    const { data: classConflicts, error: classConflictErr } = await supabase
       .from("timetable_slots")
       .select("id, start_time, end_time, subjects(name)")
       .eq("school_id", schoolId)
@@ -96,18 +97,21 @@ export async function createTimetableSlotAction(formData: FormData) {
       .eq("day_of_week", dayOfWeek)
       .lt("start_time", endTime)
       .gt("end_time", startTime)
-      .maybeSingle();
+      .limit(1);
 
+    if (classConflictErr) throw classConflictErr;
+
+    const classConflict = classConflicts?.[0];
     if (classConflict) {
-      const subjectName = (classConflict.subjects as { name?: string })?.name || "un cours";
+      const subjectName = (classConflict.subjects as unknown as { name?: string } | null)?.name || "un cours";
       return {
-        error: `Conflit de classe : Cette classe a déjà ${subjectName} programmé le ${DAYS_NAMES[dayOfWeek]} de ${classConflict.start_time.substring(0, 5)} à ${classConflict.end_time.substring(0, 5)}.`,
+        error: `Conflit de classe : Cette classe a déjà ${subjectName} programmé le ${DAYS_NAMES[dayOfWeek]} de ${String(classConflict.start_time).substring(0, 5)} à ${String(classConflict.end_time).substring(0, 5)}.`,
       };
     }
 
     // B) Conflit Enseignant : L'enseignant a-t-il déjà un cours ailleurs sur ce créneau ?
     if (teacherId) {
-      const { data: teacherConflict } = await supabase
+      const { data: teacherConflicts, error: teacherConflictErr } = await supabase
         .from("timetable_slots")
         .select("id, start_time, end_time, classes(name)")
         .eq("school_id", schoolId)
@@ -116,19 +120,22 @@ export async function createTimetableSlotAction(formData: FormData) {
         .eq("day_of_week", dayOfWeek)
         .lt("start_time", endTime)
         .gt("end_time", startTime)
-        .maybeSingle();
+        .limit(1);
 
+      if (teacherConflictErr) throw teacherConflictErr;
+
+      const teacherConflict = teacherConflicts?.[0];
       if (teacherConflict) {
-        const conflictClassName = (teacherConflict.classes as { name?: string })?.name || "une autre classe";
+        const conflictClassName = (teacherConflict.classes as unknown as { name?: string } | null)?.name || "une autre classe";
         return {
-          error: `Conflit enseignant : Cet enseignant dispense déjà un cours en ${conflictClassName} le ${DAYS_NAMES[dayOfWeek]} de ${teacherConflict.start_time.substring(0, 5)} à ${teacherConflict.end_time.substring(0, 5)}.`,
+          error: `Conflit enseignant : Cet enseignant dispense déjà un cours en ${conflictClassName} le ${DAYS_NAMES[dayOfWeek]} de ${String(teacherConflict.start_time).substring(0, 5)} à ${String(teacherConflict.end_time).substring(0, 5)}.`,
         };
       }
     }
 
     // C) Conflit de Salle : La salle est-elle déjà occupée ?
     if (room && room.trim()) {
-      const { data: roomConflict } = await supabase
+      const { data: roomConflicts, error: roomConflictErr } = await supabase
         .from("timetable_slots")
         .select("id, start_time, end_time, classes(name)")
         .eq("school_id", schoolId)
@@ -137,12 +144,15 @@ export async function createTimetableSlotAction(formData: FormData) {
         .eq("day_of_week", dayOfWeek)
         .lt("start_time", endTime)
         .gt("end_time", startTime)
-        .maybeSingle();
+        .limit(1);
 
+      if (roomConflictErr) throw roomConflictErr;
+
+      const roomConflict = roomConflicts?.[0];
       if (roomConflict) {
-        const conflictClassName = (roomConflict.classes as { name?: string })?.name || "une classe";
+        const conflictClassName = (roomConflict.classes as unknown as { name?: string } | null)?.name || "une classe";
         return {
-          error: `Conflit de salle : La salle « ${room} » est déjà réservée par ${conflictClassName} le ${DAYS_NAMES[dayOfWeek]} de ${roomConflict.start_time.substring(0, 5)} à ${roomConflict.end_time.substring(0, 5)}.`,
+          error: `Conflit de salle : La salle « ${room} » est déjà réservée par ${conflictClassName} le ${DAYS_NAMES[dayOfWeek]} de ${String(roomConflict.start_time).substring(0, 5)} à ${String(roomConflict.end_time).substring(0, 5)}.`,
         };
       }
     }
@@ -161,6 +171,13 @@ export async function createTimetableSlotAction(formData: FormData) {
     });
 
     if (insertError) {
+      // Contrainte d'exclusion Postgres (23P01) / check (23514) = conflit non détecté en amont
+      if (insertError.code === "23P01" || insertError.code === "23514") {
+        return {
+          error:
+            "Conflit d'horaire détecté par la base de données : ce créneau chevauche un cours existant pour cette classe ou cet enseignant.",
+        };
+      }
       return { error: insertError.message || "Erreur lors de l'enregistrement du créneau." };
     }
 

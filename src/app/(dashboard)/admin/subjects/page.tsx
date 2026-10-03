@@ -1,33 +1,23 @@
 import * as React from "react";
 import { getSubjects } from "@/features/academic/subjects-actions";
 import { getClasses } from "@/features/academic/actions";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedSchoolContext } from "@/lib/auth-context";
 import { SubjectsClient } from "./subjects-client";
 
 export default async function SubjectsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   let teachers: Array<{ id: string; first_name: string; last_name: string; email: string }> = [];
 
-  if (user) {
-    const { data: profile } = await supabase
+  try {
+    const { supabase, schoolId } = await getAuthenticatedSchoolContext();
+    const { data: teachersData } = await supabase
       .from("profiles")
-      .select("school_id")
-      .eq("id", user.id)
-      .maybeSingle();
+      .select("id, first_name, last_name, email")
+      .eq("school_id", schoolId)
+      .eq("role", "enseignant");
 
-    if (profile?.school_id) {
-      const { data: teachersData } = await supabase
-        .from("profiles")
-        .select("id, first_name, last_name, email")
-        .eq("school_id", profile.school_id)
-        .eq("role", "enseignant");
-
-      teachers = teachersData || [];
-    }
+    teachers = teachersData || [];
+  } catch {
+    // Hors session / établissement : getSubjects() ci-dessous renverra l'erreur explicite
   }
 
   const [subjectsRes, classesRes] = await Promise.all([

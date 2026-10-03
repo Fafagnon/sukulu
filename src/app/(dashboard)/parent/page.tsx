@@ -1,7 +1,5 @@
 import * as React from "react";
-import { UserCheck, Award, FileText, Clock, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 
 export default function ParentDashboardPage() {
   return (

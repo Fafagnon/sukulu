@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
 import {
   ArrowLeft,
@@ -12,8 +11,6 @@ import {
   AlertCircle,
   Download,
   ArrowRight,
-  RefreshCw,
-  X,
   Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,6 +20,7 @@ import {
 } from "@/features/students/import-actions";
 import { toast } from "sonner";
 import { type Gender } from "@/types/database";
+import { buildCsv, downloadTextFile } from "@/lib/csv";
 
 interface ClassItem {
   id: string;
@@ -53,8 +51,6 @@ export function StudentImportClient({
   years: AcademicYearItem[];
   activeYearId: string | null;
 }) {
-  const router = useRouter();
-
   // Wizard Step: 1 -> 2 -> 3 -> 4 -> 5
   const [currentStep, setCurrentStep] = React.useState<number>(1);
   const [targetYearId, setTargetYearId] = React.useState<string>(activeYearId || years[0]?.id || "");
@@ -114,16 +110,10 @@ export function StudentImportClient({
       "non",
     ];
 
-    const csvContent =
-      "data:text/csv;charset=utf-8,\uFEFF" +
-      [headers.join(";"), sampleRow.join(";")].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "modele_import_eleves_sukulu.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadTextFile(
+      "modele_import_eleves_sukulu.csv",
+      buildCsv(headers, [sampleRow], ";")
+    );
   };
 
   // Traitement du fichier uploadé (XLSX, XLS ou CSV)
@@ -313,22 +303,16 @@ export function StudentImportClient({
     const headers = ["Ligne", "Matricule", "Nom", "Prénoms", "Erreurs Détectées"];
     const rows = errorRows.map((r) => [
       r.rowNumber,
-      `"${r.data.matricule}"`,
-      `"${r.data.lastName}"`,
-      `"${r.data.firstName}"`,
-      `"${r.errors.join(" | ")}"`,
+      r.data.matricule,
+      r.data.lastName,
+      r.data.firstName,
+      r.errors.join(" | "),
     ]);
 
-    const csvContent =
-      "data:text/csv;charset=utf-8,\uFEFF" +
-      [headers.join(";"), ...rows.map((r) => r.join(";"))].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `rapport_erreurs_import_sukulu.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadTextFile(
+      "rapport_erreurs_import_sukulu.csv",
+      buildCsv(headers, rows, ";")
+    );
   };
 
   // Étape 5 : Lancement de l'import effectif
@@ -399,7 +383,7 @@ export function StudentImportClient({
             { num: 3, label: "Validation" },
             { num: 4, label: "Aperçu" },
             { num: 5, label: "Terminé" },
-          ].map((s, idx) => (
+          ].map((s) => (
             <div key={s.num} className="flex flex-col items-center gap-1.5 z-10">
               <div
                 className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs transition-colors ${

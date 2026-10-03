@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { type Database } from "@/types/database";
+import { REMEMBER_COOKIE, REMEMBER_MAX_AGE, applyRememberMe } from "./persistence";
 
 export async function createClient() {
   const cookieStore = await cookies();
@@ -15,44 +16,31 @@ export async function createClient() {
       },
       setAll(cookiesToSet) {
         try {
+          const remembered = cookieStore.get(REMEMBER_COOKIE)?.value === "1";
           cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
+            cookieStore.set(name, value, applyRememberMe(options, remembered))
           );
         } catch {
-          // Géré par le middleware en cas d'appel depuis un Server Component pur
+          // Géré par le proxy en cas d'appel depuis un Server Component pur
         }
       },
     },
   });
 }
 
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import fs from "fs";
-import path from "path";
+export { REMEMBER_COOKIE, REMEMBER_MAX_AGE };
 
-function getServiceRoleKey(): string {
-  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return process.env.SUPABASE_SERVICE_ROLE_KEY;
-  }
-  try {
-    const envPath = path.resolve(process.cwd(), ".env.local");
-    if (fs.existsSync(envPath)) {
-      const content = fs.readFileSync(envPath, "utf-8");
-      const match = content.match(/SUPABASE_SERVICE_ROLE_KEY\s*=\s*(.+)/);
-      if (match && match[1]) {
-        return match[1].trim();
-      }
-    }
-  } catch {}
-  return (
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    "placeholder-key"
-  );
-}
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 export function createAdminClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://hmzatrkgjmkxdavznyyw.supabase.co";
-  const serviceRoleKey = getServiceRoleKey();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error(
+      "Configuration manquante : NEXT_PUBLIC_SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY doivent être définis dans .env.local."
+    );
+  }
 
   return createSupabaseClient<Database>(supabaseUrl, serviceRoleKey, {
     auth: {

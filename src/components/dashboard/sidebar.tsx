@@ -10,7 +10,7 @@ import {
   GraduationCap,
   BookOpen,
   Clock,
-  Settings,
+  ClipboardCheck,
   LogOut,
   Building2,
   Menu,
@@ -68,6 +68,11 @@ const navItems = [
     label: "Emplois du temps",
     href: "/admin/timetable",
     icon: Clock,
+  },
+  {
+    label: "Notes & Résultats",
+    href: "/admin/grades",
+    icon: ClipboardCheck,
   },
 ];
 

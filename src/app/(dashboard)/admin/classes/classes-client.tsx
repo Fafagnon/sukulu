@@ -9,7 +9,6 @@ import {
   Users,
   AlertCircle,
   Building2,
-  Sparkles,
 } from "lucide-react";
 import { createClassAction, deleteClassAction } from "@/features/academic/actions";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -33,12 +32,11 @@ interface AcademicYearItem {
 export function ClassesClient({
   initialClasses,
   activeYearId,
-  years,
   loadError,
 }: {
   initialClasses: ClassItem[];
   activeYearId: string | null;
-  years: AcademicYearItem[];
+  years?: AcademicYearItem[];
   loadError?: string;
 }) {
   const [selectedCycle, setSelectedCycle] = React.useState<string>("all");

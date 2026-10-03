@@ -7,42 +7,34 @@ import {
   Clock,
   ArrowRight,
   ShieldCheck,
-  CheckCircle2,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedSchoolContext } from "@/lib/auth-context";
 
 export default async function AdminDashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   let schoolName = "Établissement";
   let activeYearName = "Non définie";
   let classesCount = 0;
-  let periodsCount = 0;
 
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("school_id")
-      .eq("id", user.id)
-      .maybeSingle();
+  try {
+    const { supabase, schoolId } = await getAuthenticatedSchoolContext();
+    const [schoolRes, yearRes, classesRes] = await Promise.all([
+      supabase.from("schools").select("name").eq("id", schoolId).maybeSingle(),
+      supabase
+        .from("academic_years")
+        .select("id, name, periods(id)")
+        .eq("school_id", schoolId)
+        .eq("is_active", true)
+        .maybeSingle(),
+      supabase.from("classes").select("id", { count: "exact" }).eq("school_id", schoolId),
+    ]);
 
-    if (profile?.school_id) {
-      const [schoolRes, yearRes, classesRes] = await Promise.all([
-        supabase.from("schools").select("name").eq("id", profile.school_id).maybeSingle(),
-        supabase.from("academic_years").select("id, name, periods(id)").eq("school_id", profile.school_id).eq("is_active", true).maybeSingle(),
-        supabase.from("classes").select("id", { count: "exact" }).eq("school_id", profile.school_id),
-      ]);
-
-      schoolName = schoolRes.data?.name || "Établissement";
-      if (yearRes.data) {
-        activeYearName = yearRes.data.name;
-        periodsCount = (yearRes.data.periods as unknown[])?.length || 0;
-      }
-      classesCount = classesRes.count || 0;
+    schoolName = schoolRes.data?.name || "Établissement";
+    if (yearRes.data) {
+      activeYearName = yearRes.data.name;
     }
+    classesCount = classesRes.count || 0;
+  } catch {
+    // Pas de session ou pas d'établissement : valeurs par défaut
   }
 
   return (

@@ -5,12 +5,10 @@ import {
   Calendar,
   Plus,
   CheckCircle2,
-  Clock,
   Lock,
   Unlock,
   AlertCircle,
   FileCheck,
-  ChevronDown,
 } from "lucide-react";
 import {
   createAcademicYearAction,

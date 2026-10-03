@@ -60,24 +60,10 @@ export const getAuthenticatedSchoolContext = cache(async (): Promise<Authenticat
     }
   }
 
-  // Secours si l'utilisateur n'a pas encore de profil rattaché ou en dev
-  const { data: defaultSchool } = await supabase
-    .from("schools")
-    .select("id, name, code, short_name, country, currency")
-    .limit(1)
-    .maybeSingle();
-
-  if (defaultSchool) {
-    return {
-      supabase,
-      user: null,
-      profile: null,
-      school: defaultSchool,
-      schoolId: defaultSchool.id,
-      role: "direction",
-      country: defaultSchool.country || "Togo",
-    };
-  }
-
-  throw new Error("Aucun établissement disponible. Veuillez compléter l'initialisation.");
+  // Aucun établissement rattaché : on n'invente JAMAIS de contexte par défaut.
+  // (Le ancien fallback `.limit(1)` + rôle "direction" fabriqué permettait à
+  // tout compte non rattaché d'agir sur n'importe quel tenant.)
+  throw new Error(
+    "Aucun établissement rattaché à ce compte. Veuillez compléter l'onboarding."
+  );
 });

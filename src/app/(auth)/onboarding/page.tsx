@@ -10,24 +10,62 @@ import {
   Award,
   Check,
   AlertCircle,
+  CalendarDays,
+  Coins,
+  ClipboardCheck,
+  Wallet,
+  Users,
 } from "lucide-react";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { submitOnboardingAction } from "@/features/auth/actions";
 import { toast } from "sonner";
 
+const PERIOD_OPTIONS = [
+  { id: "trimestre", title: "Trimestres", desc: "3 périodes d'évaluation par an (standard Togo)" },
+  { id: "semestre", title: "Semestres", desc: "2 périodes d'évaluation par an" },
+] as const;
+
+const CURRENCY_OPTIONS = [
+  { id: "XOF", label: "FCFA (XOF)" },
+  { id: "XAF", label: "FCFA (XAF)" },
+  { id: "GHS", label: "Cedi (GHS)" },
+  { id: "EUR", label: "Euro (EUR)" },
+] as const;
+
+const PRIORITY_OPTIONS = [
+  { id: "notes", label: "Notes & Bulletins", desc: "Saisie des notes, moyennes et rangs", icon: ClipboardCheck },
+  { id: "assiduite", label: "Assiduité", desc: "Appel, absences et retards", icon: CalendarDays },
+  { id: "caisse", label: "Caisse", desc: "Frais scolaires et reçus", icon: Wallet },
+  { id: "inscriptions", label: "Inscriptions", desc: "Dossiers élèves et responsables", icon: Users },
+] as const;
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = React.useState(1);
-  const totalSteps = 2;
+  const totalSteps = 4;
   const [isLoading, setIsLoading] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
-  // Données du formulaire (sans valeurs prédéfinies)
+  // Étape 1 — Type d'établissement
   const [schoolType, setSchoolType] = React.useState("complexe");
+  // Étape 2 — Identité
   const [schoolName, setSchoolName] = React.useState("");
   const [schoolCode, setSchoolCode] = React.useState("");
   const [city, setCity] = React.useState("");
   const [country, setCountry] = React.useState("");
+  // Étape 3 — Organisation académique
+  const [periodType, setPeriodType] = React.useState<"trimestre" | "semestre">(
+    "trimestre"
+  );
+  const [currency, setCurrency] = React.useState("XOF");
+  // Étape 4 — Modules prioritaires
+  const [priorities, setPriorities] = React.useState<string[]>(["notes"]);
+
+  const togglePriority = (id: string) => {
+    setPriorities((prev) =>
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
+    );
+  };
 
   const handleNext = async () => {
     setErrorMessage(null);
@@ -42,7 +80,7 @@ export default function OnboardingPage() {
       return;
     }
 
-    // Validation Étape 2 & Soumission
+    // Validation Étape 2
     if (currentStep === 2) {
       if (!schoolName.trim() || schoolName.trim().length < 3) {
         setErrorMessage("Le nom de l'établissement doit comporter au moins 3 caractères.");
@@ -60,27 +98,47 @@ export default function OnboardingPage() {
         setErrorMessage("Veuillez sélectionner le pays.");
         return;
       }
+      setCurrentStep(3);
+      return;
+    }
 
-      setIsLoading(true);
-      const result = await submitOnboardingAction({
-        schoolType,
-        schoolName: schoolName.trim(),
-        schoolCode: schoolCode.trim().toUpperCase(),
-        city: city.trim(),
-        country,
-      });
-
-      if (result.error) {
-        setErrorMessage(result.error);
-        setIsLoading(false);
+    // Validation Étape 3
+    if (currentStep === 3) {
+      if (!periodType) {
+        setErrorMessage("Veuillez choisir l'organisation de l'année scolaire.");
         return;
       }
-
-      if (result.success) {
-        toast.success("Établissement configuré avec succès !");
-        router.push(result.redirectPath || "/admin");
-        router.refresh();
+      if (!currency) {
+        setErrorMessage("Veuillez sélectionner la devise.");
+        return;
       }
+      setCurrentStep(4);
+      return;
+    }
+
+    // Étape 4 : soumission complète
+    setIsLoading(true);
+    const result = await submitOnboardingAction({
+      schoolType,
+      schoolName: schoolName.trim(),
+      schoolCode: schoolCode.trim().toUpperCase(),
+      city: city.trim(),
+      country,
+      currency,
+      periodType,
+      priorities: priorities.length > 0 ? priorities : ["notes"],
+    });
+
+    if (result.error) {
+      setErrorMessage(result.error);
+      setIsLoading(false);
+      return;
+    }
+
+    if (result.success) {
+      toast.success("Établissement configuré avec succès !");
+      router.push(result.redirectPath || "/admin");
+      router.refresh();
     }
   };
 
@@ -102,10 +160,12 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        {/* 2. Barre de progression segmentée (2 étapes simples) */}
+        {/* 2. Barre de progression segmentée (4 étapes) */}
         <div>
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500 mb-2">
-            <span>Étape {currentStep} sur {totalSteps}</span>
+            <span>
+              Étape {currentStep} sur {totalSteps}
+            </span>
             <span className="text-[#002B5B] font-bold">{percentage}%</span>
           </div>
 
@@ -128,7 +188,7 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* ÉTAPE 1 : Type d'établissement (Icônes filaires sobres, zéro boîte colorée) */}
+        {/* ÉTAPE 1 : Type d'établissement */}
         {currentStep === 1 && (
           <div className="space-y-4">
             <div className="text-center">
@@ -193,9 +253,7 @@ export default function OnboardingPage() {
                       >
                         {item.title}
                       </p>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        {item.desc}
-                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">{item.desc}</p>
                     </div>
                     {isSelected && (
                       <div className="w-5 h-5 rounded-full bg-[#002B5B] text-white flex items-center justify-center shrink-0">
@@ -209,7 +267,7 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* ÉTAPE 2 : Identité de l'établissement (Champs nets, sans placeholders, sans valeurs préremplies) */}
+        {/* ÉTAPE 2 : Identité de l'établissement */}
         {currentStep === 2 && (
           <div className="space-y-4">
             <div className="text-center">
@@ -312,6 +370,140 @@ export default function OnboardingPage() {
           </div>
         )}
 
+        {/* ÉTAPE 3 : Organisation académique & devise */}
+        {currentStep === 3 && (
+          <div className="space-y-5">
+            <div className="text-center">
+              <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+                Organisation de l&apos;année scolaire
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Ces réglages structurent vos périodes d&apos;évaluation et vos bulletins.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <span className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                Rythme académique
+              </span>
+              {PERIOD_OPTIONS.map((opt) => {
+                const isSelected = periodType === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setPeriodType(opt.id)}
+                    className={`w-full p-3.5 rounded-xl border text-left flex items-center gap-3.5 transition-all ${
+                      isSelected
+                        ? "border-[#002B5B] bg-slate-50/70 ring-1 ring-[#002B5B]"
+                        : "border-slate-200 bg-white hover:border-slate-300"
+                    }`}
+                  >
+                    <CalendarDays
+                      className={`w-5 h-5 shrink-0 stroke-[1.6] ${
+                        isSelected ? "text-[#002B5B]" : "text-slate-500"
+                      }`}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className={`text-sm font-semibold leading-tight ${
+                          isSelected ? "text-[#002B5B]" : "text-slate-900"
+                        }`}
+                      >
+                        {opt.title}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">{opt.desc}</p>
+                    </div>
+                    {isSelected && (
+                      <div className="w-5 h-5 rounded-full bg-[#002B5B] text-white flex items-center justify-center shrink-0">
+                        <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="space-y-1.5">
+              <label
+                htmlFor="currency"
+                className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 uppercase tracking-wider"
+              >
+                <Coins className="w-3.5 h-3.5" /> Devise monétaire
+              </label>
+              <select
+                id="currency"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 transition-all focus:outline-none focus:border-[#002B5B] focus:ring-1 focus:ring-[#002B5B]"
+              >
+                {CURRENCY_OPTIONS.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-slate-500">
+                Utilisée pour la caisse et les reçus de frais scolaires.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ÉTAPE 4 : Modules prioritaires */}
+        {currentStep === 4 && (
+          <div className="space-y-4">
+            <div className="text-center">
+              <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+                Quels modules activez-vous en priorité ?
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Tous les modules restent disponibles : choisissez vos foyers d&apos;attention.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2.5">
+              {PRIORITY_OPTIONS.map((opt) => {
+                const isSelected = priorities.includes(opt.id);
+                const IconComponent = opt.icon;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => togglePriority(opt.id)}
+                    className={`w-full p-3.5 rounded-xl border text-left flex items-center gap-3.5 transition-all ${
+                      isSelected
+                        ? "border-[#FF6B00] bg-orange-50/50 ring-1 ring-[#FF6B00]"
+                        : "border-slate-200 bg-white hover:border-slate-300"
+                    }`}
+                  >
+                    <IconComponent
+                      className={`w-5 h-5 shrink-0 stroke-[1.6] ${
+                        isSelected ? "text-[#FF6B00]" : "text-slate-500"
+                      }`}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className={`text-sm font-semibold leading-tight ${
+                          isSelected ? "text-[#FF6B00]" : "text-slate-900"
+                        }`}
+                      >
+                        {opt.label}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">{opt.desc}</p>
+                    </div>
+                    {isSelected && (
+                      <div className="w-5 h-5 rounded-full bg-[#FF6B00] text-white flex items-center justify-center shrink-0">
+                        <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* 3. Boutons d'action du bas */}
         <div className="pt-2 space-y-2">
           <button
@@ -335,7 +527,7 @@ export default function OnboardingPage() {
           {currentStep > 1 && (
             <button
               type="button"
-              onClick={() => setCurrentStep(1)}
+              onClick={() => setCurrentStep((s) => Math.max(1, s - 1))}
               disabled={isLoading}
               className="w-full text-center text-xs font-medium text-slate-500 hover:text-slate-800 transition-colors py-1.5"
             >

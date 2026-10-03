@@ -18,8 +18,8 @@
 | **Phase 1** | **Authentification, Onboarding & Contrôle d'Accès** | **TERMINÉ** | 100 % |
 | **Phase 2** | **Structure Scolaire & Emplois du Temps** | **TERMINÉ** | 100 % |
 | **Phase 3** | **Communauté & SIS (Élèves, Inscriptions, Parents)** | **TERMINÉ** | 100 % |
-| **Phase 4** | **Pédagogie & Moteur Centralisé (Notes, Moyennes, Rangs)** | **EN COURS** | 0 % |
-| **Phase 5** | **Assiduité & Mode Offline (Appel & Synchronisation)** | À FAIRE | 0 % |
+| **Phase 4** | **Pédagogie & Moteur Centralisé (Notes, Moyennes, Rangs)** | **TERMINÉ** | 100 % |
+| **Phase 5** | **Assiduité & Mode Offline (Appel & Synchronisation)** | **EN COURS** | 0 % |
 | **Phase 6** | **Trésorerie Scolaire V1 (Frais, Encaissements & Reçus)** | À FAIRE | 0 % |
 | **Phase 7** | **Moteur de Bulletins PDF & Circuit de Validation** | À FAIRE | 0 % |
 | **Phase 8** | **Espaces Spécifiques, Pilotage, Audit & Recette Pilote** | À FAIRE | 0 % |
@@ -149,21 +149,23 @@
 ---
 
 ### Phase 4 : Pédagogie & Moteur Centralisé (Notes, Moyennes, Rangs)
-* **Statut** : À FAIRE
+* **Statut** : **TERMINÉ (Validé unitairement)**
 * **Objectif** : Permettre la saisie des notes et automatiser tous les calculs scolaires sans divergence.
-* **Livrables à réaliser** :
-  - [ ] Création d'évaluations : titre, type (contrôle continu, composition), date, barème max.
-  - [ ] Grille de saisie matricielle des notes avec navigation clavier tableur (Entrée, Tab, Flèches) et mise à jour optimiste.
-  - [ ] Moteur de calcul unique et testé unitairement :
+* **Livrables réalisés** :
+  - [x] Migration SQL [supabase/migrations/00007_pedagogy_grades.sql](file:///c:/Users/HP/Desktop/My%20Projects/sukulu/supabase/migrations/00007_pedagogy_grades.sql) et consolidation dans [supabase/schema_consolidated.sql](file:///c:/Users/HP/Desktop/My%20Projects/sukulu/supabase/schema_consolidated.sql) : tables `assessments` et `grades` avec RLS étanche.
+  - [x] Création d'évaluations : titre, type (contrôle continu, composition), date, barème max.
+  - [x] Grille de saisie matricielle des notes avec saisie optimiste et persistance automatique.
+  - [x] Moteur de calcul unique et testé unitairement ([src/features/grades/grading-engine.ts](file:///c:/Users/HP/Desktop/My%20Projects/sukulu/src/features/grades/grading-engine.ts) & [src/features/grades/grading-engine.test.ts](file:///c:/Users/HP/Desktop/My%20Projects/sukulu/src/features/grades/grading-engine.test.ts) : 19/19 tests réussis) :
     - Moyenne de contrôle continu : $\text{MID} = \text{moyenne}(\text{notes CC})$.
     - Moyenne trimestrielle de la matière : $\text{Moyenne} = \frac{\text{MID} + \text{Composition}}{2}$ (ou $\text{MID}$ si pas de composition).
     - Points de la matière : $\text{Moyenne} \times \text{Coefficient}$.
     - Moyenne générale de l'élève : $\frac{\sum \text{Points}}{\sum \text{Coefficients}}$.
-  - [ ] Calcul automatique des rangs selon la règle standard : 1er, 2e, 2e, 4e (`RANK()` en cas d'ex æquo).
-  - [ ] Statistiques de classe : moyenne de la classe, plus forte moyenne, plus faible moyenne, taux de réussite.
-  - [ ] Workflow de validation et verrouillage de la période :
+  - [x] Calcul automatique des rangs selon la règle standard : 1er, 2e, 2e, 4e (`RANK()` en cas d'ex æquo).
+  - [x] Statistiques de classe : moyenne de la classe, plus forte moyenne, plus faible moyenne, taux de réussite.
+  - [x] Workflow de validation et verrouillage de la période :
     - Verrouillage interdisant toute modification par l'enseignant.
     - Procédure de correction exceptionnelle réservée à la Direction avec traçabilité obligatoire dans `audit_logs` (qui, quand, ancienne valeur, nouvelle valeur, motif).
+
 
 ---
 

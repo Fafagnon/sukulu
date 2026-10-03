@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
 
 export interface TeacherAssignment {
   id: string;
@@ -40,6 +39,7 @@ export interface TeacherProfile {
 }
 
 import { getAuthenticatedSchoolContext } from "@/lib/auth-context";
+import { logAuditEvent } from "@/lib/audit";
 
 /**
  * 1. Récupère la liste des enseignants de l'école avec leurs matières et classes affectées
@@ -116,7 +116,6 @@ export async function getTeachers(search?: string) {
 }
 
 import { createAdminClient } from "@/lib/supabase/server";
-import { getAuthenticatedSchoolContext } from "@/lib/auth-context";
 
 /**
  * 2. Crée un nouveau profil enseignant
@@ -141,20 +140,45 @@ export async function createTeacherAction(formData: FormData) {
 
     const admin = createAdminClient();
 
-    // 1. Vérifier si un compte auth existe déjà pour cet email
-    let userId: string | null = null;
-    const { data: usersData } = await admin.auth.admin.listUsers();
-    const existingUser = usersData?.users.find((u) => u.email?.toLowerCase() === email);
+    // 1. Vérifier si un compte existe déjà pour cet email (profil = source de vérité multi-tenant).
+    // On ne parcourt PAS auth.users (vol cross-tenant + page de 50 max).
+    const { data: existingProfile, error: profileLookupErr } = await admin
+      .from("profiles")
+      .select("id, school_id, role")
+      .ilike("email", email)
+      .limit(1);
 
-    if (existingUser) {
-      userId = existingUser.id;
+    if (profileLookupErr) throw profileLookupErr;
+
+    let userId: string | null = existingProfile?.[0]?.id ?? null;
+    let inviteLink: string | null = null;
+    let tempPassword: string | null = null;
+
+    if (userId && existingProfile![0].school_id && existingProfile![0].school_id !== schoolId) {
+      return { error: "Un compte est déjà rattaché à un autre établissement pour cet email." };
+    }
+
+    if (userId) {
+      // Compte déjà présent dans cette école : on vérifie qu'aucun profil enseignant n'existe déjà
+      const { data: existingTeacher } = await admin
+        .from("teacher_profiles")
+        .select("id")
+        .eq("user_id", userId)
+        .limit(1);
+      if (existingTeacher && existingTeacher.length > 0) {
+        return { error: "Cet enseignant est déjà enregistré." };
+      }
     } else {
-      // Créer le compte utilisateur dans Supabase Auth
-      const tempPassword = `Sukulu@${Math.floor(100000 + Math.random() * 900000)}`;
+      // Créer le compte utilisateur avec un mot de passe fort, puis générer une invitation
+      const bytes = new Uint8Array(18);
+      crypto.getRandomValues(bytes);
+      const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+      tempPassword = Array.from(bytes, (b) => alphabet[b % alphabet.length]).join("");
+
       const { data: newAuthUser, error: authErr } = await admin.auth.admin.createUser({
         email,
         password: tempPassword,
-        email_confirm: true,
+        email_confirm: false,
         user_metadata: {
           first_name: firstName,
           last_name: lastName,
@@ -166,6 +190,15 @@ export async function createTeacherAction(formData: FormData) {
         throw new Error(authErr?.message || "Impossible de générer le compte enseignant.");
       }
       userId = newAuthUser.user.id;
+
+      // Lien d'invitation à communiquer à l'enseignant (valable une fois, expire)
+      const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+        type: "invite",
+        email,
+      });
+      if (!linkErr && linkData?.properties?.action_link) {
+        inviteLink = linkData.properties.action_link;
+      }
     }
 
     // 2. Garantir le profil public lié à l'établissement
@@ -198,8 +231,16 @@ export async function createTeacherAction(formData: FormData) {
 
     if (teacherErr) throw teacherErr;
 
+    void logAuditEvent({
+      schoolId,
+      action: "create",
+      entityType: "teacher",
+      entityId: userId!,
+      newData: { first_name: firstName, last_name: lastName, email, matricule: teacherMatricule },
+    });
+
     revalidatePath("/admin/teachers");
-    return { success: true };
+    return { success: true, inviteLink, tempPassword };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Erreur lors de la création de l'enseignant.";
     return { error: message };

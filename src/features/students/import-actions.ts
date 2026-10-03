@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
 import { type Gender } from "@/types/database";
+import { getAuthenticatedSchoolContext } from "@/lib/auth-context";
+import { logAuditEvent } from "@/lib/audit";
 
 export interface StudentImportRow {
   matricule: string;
@@ -22,37 +23,6 @@ export interface ImportBatchResult {
   errors: Array<{ rowNumber: number; matricule: string; error: string }>;
 }
 
-async function getAuthenticatedSchoolContext() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("school_id, role")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (profile?.school_id) {
-      return { supabase, user, schoolId: profile.school_id, role: profile.role };
-    }
-  }
-
-  const { data: defaultSchool } = await supabase
-    .from("schools")
-    .select("id")
-    .limit(1)
-    .maybeSingle();
-
-  if (defaultSchool) {
-    return { supabase, user: null, schoolId: defaultSchool.id, role: "direction" as const };
-  }
-
-  throw new Error("Aucun établissement disponible.");
-}
-
 /**
  * Exécute l'import par lot d'élèves avec résolution automatique des classes
  */
@@ -61,7 +31,7 @@ export async function importStudentsBatchAction(
   academicYearId: string
 ): Promise<{ success: boolean; result?: ImportBatchResult; error?: string }> {
   try {
-    const { supabase, schoolId, role } = await getAuthenticatedSchoolContext();
+    const { supabase, schoolId, role, user } = await getAuthenticatedSchoolContext();
 
     if (role !== "direction" && role !== "superadmin") {
       return { success: false, error: "Action réservée à la direction de l'établissement." };
@@ -202,6 +172,15 @@ export async function importStudentsBatchAction(
         });
       }
     }
+
+    void logAuditEvent({
+      schoolId,
+      userId: user?.id,
+      action: "import",
+      entityType: "student",
+      entityId: academicYearId,
+      newData: { imported_count: importedCount, errors_count: errors.length },
+    });
 
     revalidatePath("/admin/students");
 

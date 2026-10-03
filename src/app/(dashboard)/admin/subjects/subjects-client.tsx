@@ -9,7 +9,6 @@ import {
   Layers,
   GraduationCap,
   AlertCircle,
-  Check,
   Search,
 } from "lucide-react";
 import {
@@ -78,22 +77,32 @@ export function SubjectsClient({
     classes[0]?.id || ""
   );
   const [classAssignments, setClassAssignments] = React.useState<ClassSubjectItem[]>([]);
-  const [isLoadingAssignments, setIsLoadingAssignments] = React.useState(false);
+  const [loadedForClass, setLoadedForClass] = React.useState<string>("");
   const [isAssignModalOpen, setIsAssignModalOpen] = React.useState(false);
+
+  // Spinner dérivé : true tant que la classe sélectionnée n'a pas encore été chargée
+  const isLoadingAssignments = Boolean(selectedClassId) && selectedClassId !== loadedForClass;
+
+  const loadClassAssignments = React.useCallback(async (classId: string) => {
+    const res = await getClassSubjects(classId);
+    setClassAssignments((res.data as unknown as ClassSubjectItem[]) || []);
+    setLoadedForClass(classId);
+  }, []);
 
   // Chargement des affectations quand la classe sélectionnée change
   React.useEffect(() => {
-    if (selectedClassId) {
-      loadClassAssignments(selectedClassId);
-    }
+    if (!selectedClassId) return;
+    let cancelled = false;
+    void (async () => {
+      const res = await getClassSubjects(selectedClassId);
+      if (cancelled) return;
+      setClassAssignments((res.data as unknown as ClassSubjectItem[]) || []);
+      setLoadedForClass(selectedClassId);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [selectedClassId]);
-
-  const loadClassAssignments = async (classId: string) => {
-    setIsLoadingAssignments(true);
-    const res = await getClassSubjects(classId);
-    setClassAssignments((res.data as unknown as ClassSubjectItem[]) || []);
-    setIsLoadingAssignments(false);
-  };
 
   const handleCreateSubject = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

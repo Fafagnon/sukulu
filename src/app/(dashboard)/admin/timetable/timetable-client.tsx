@@ -2,24 +2,20 @@
 
 import * as React from "react";
 import {
-  Clock,
   Plus,
   Trash2,
-  Calendar,
   GraduationCap,
   User,
   MapPin,
   AlertCircle,
-  Layers,
 } from "lucide-react";
 import {
   createTimetableSlotAction,
   deleteTimetableSlotAction,
 } from "@/features/academic/timetable-actions";
-import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
 
-interface TimetableSlotItem {
+export interface TimetableSlotItem {
   id: string;
   class_id: string;
   subject_id: string;

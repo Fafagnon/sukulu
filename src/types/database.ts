@@ -32,6 +32,7 @@ export type Database = {
           currency: string;
           academic_settings: Json | null;
           status: "active" | "inactive" | "suspended";
+          created_by: string | null;
           created_at: string;
           updated_at: string;
           deleted_at: string | null;
@@ -50,6 +51,7 @@ export type Database = {
           currency?: string;
           academic_settings?: Json | null;
           status?: "active" | "inactive" | "suspended";
+          created_by?: string | null;
           created_at?: string;
           updated_at?: string;
           deleted_at?: string | null;
@@ -68,6 +70,7 @@ export type Database = {
           currency?: string;
           academic_settings?: Json | null;
           status?: "active" | "inactive" | "suspended";
+          created_by?: string | null;
           created_at?: string;
           updated_at?: string;
           deleted_at?: string | null;
@@ -799,6 +802,137 @@ export type Database = {
             columns: ["school_id"];
             isOneToOne: false;
             referencedRelation: "schools";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      assessments: {
+        Row: {
+          id: string;
+          school_id: string;
+          academic_year_id: string;
+          period_id: string;
+          class_id: string;
+          subject_id: string;
+          teacher_id: string | null;
+          title: string;
+          type: "cc" | "composition";
+          assessment_date: string;
+          max_score: number;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          academic_year_id: string;
+          period_id: string;
+          class_id: string;
+          subject_id: string;
+          teacher_id?: string | null;
+          title: string;
+          type?: "cc" | "composition";
+          assessment_date?: string;
+          max_score?: number;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          academic_year_id?: string;
+          period_id?: string;
+          class_id?: string;
+          subject_id?: string;
+          teacher_id?: string | null;
+          title?: string;
+          type?: "cc" | "composition";
+          assessment_date?: string;
+          max_score?: number;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "assessments_school_id_fkey";
+            columns: ["school_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assessments_period_id_fkey";
+            columns: ["period_id"];
+            isOneToOne: false;
+            referencedRelation: "periods";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assessments_class_id_fkey";
+            columns: ["class_id"];
+            isOneToOne: false;
+            referencedRelation: "classes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "assessments_subject_id_fkey";
+            columns: ["subject_id"];
+            isOneToOne: false;
+            referencedRelation: "subjects";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      grades: {
+        Row: {
+          id: string;
+          school_id: string;
+          assessment_id: string;
+          student_id: string;
+          score: number;
+          comment: string | null;
+          entered_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          school_id: string;
+          assessment_id: string;
+          student_id: string;
+          score: number;
+          comment?: string | null;
+          entered_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          school_id?: string;
+          assessment_id?: string;
+          student_id?: string;
+          score?: number;
+          comment?: string | null;
+          entered_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "grades_assessment_id_fkey";
+            columns: ["assessment_id"];
+            isOneToOne: false;
+            referencedRelation: "assessments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "grades_student_id_fkey";
+            columns: ["student_id"];
+            isOneToOne: false;
+            referencedRelation: "students";
             referencedColumns: ["id"];
           }
         ];

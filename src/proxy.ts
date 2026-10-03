@@ -3,12 +3,16 @@ import { NextResponse, type NextRequest } from "next/server";
 import { type Database } from "@/types/database";
 
 /**
- * Middleware de sécurité SUKULU :
+ * Proxy SUKULU (ex-« middleware » — convention renommée en Next 16) :
  * 1. Rafraîchit les sessions chiffrées Supabase Auth via cookies.
  * 2. Bloque l'accès aux espaces privés (/admin, /teacher, /parent) si l'utilisateur n'est pas connecté.
- * 3. Redirige automatiquement un utilisateur déjà authentifié loin des pages de login/register vers son espace de travail.
+ * 3. Redirige un utilisateur déjà authentifié loin des pages de login/register
+ *    vers son espace de travail (rôle lu dans profiles, pas dans app_metadata).
+ *
+ * Note : la redirection post-login utilise `redirectTo` validé côté client et
+ * côté serveur par safeRedirectPath (anti open-redirect).
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -37,20 +41,17 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // Ne pas utiliser getSession() pour la sécurité côté serveur, utiliser getUser()
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
 
-  // Détection des routes protégées par rôle
   const isProtectedArea =
     pathname.startsWith("/admin") ||
     pathname.startsWith("/teacher") ||
     pathname.startsWith("/parent");
 
-  // Détection des routes d'accès public
   const isAuthRoute =
     pathname.startsWith("/login") || pathname.startsWith("/register");
 
@@ -58,21 +59,33 @@ export async function middleware(request: NextRequest) {
   if (!user && isProtectedArea) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
+    redirectUrl.search = "";
     redirectUrl.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
   // Cas 2 : Utilisateur déjà connecté se rendant sur /login ou /register
   if (user && isAuthRoute) {
-    const role = (user.app_metadata?.role as string) || "direction";
+    let role = (user.app_metadata?.role as string) || "";
+
+    if (!role) {
+      // Le rôle vit dans profiles (app_metadata n'est renseigné que parfois)
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+      role = profile?.role || "direction";
+    }
+
     const redirectUrl = request.nextUrl.clone();
+    redirectUrl.search = "";
 
     if (role === "enseignant") {
       redirectUrl.pathname = "/teacher";
     } else if (role === "parent") {
       redirectUrl.pathname = "/parent";
     } else {
-      // Direction et Superadmin
       redirectUrl.pathname = "/admin";
     }
 
@@ -85,11 +98,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - logo.svg & static images
+     * Exclut les assets statiques et l'optimisation d'images.
      */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|jfif)$).*)",
   ],

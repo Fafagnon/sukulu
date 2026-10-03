@@ -2,13 +2,10 @@
 
 import * as React from "react";
 import {
-  UserCheck,
   Search,
   Plus,
   Mail,
   Phone,
-  BookOpen,
-  GraduationCap,
   AlertCircle,
   X,
   Briefcase,
@@ -16,7 +13,6 @@ import {
 import {
   createTeacherAction,
   type TeacherProfile,
-  type TeacherAssignment,
 } from "@/features/teachers/teacher-actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,13 +34,16 @@ export function TeachersClient({
 }) {
   const router = useRouter();
   const [teachers, setTeachers] = React.useState<TeacherProfile[]>(initialTeachers);
+  const [prevInitialTeachers, setPrevInitialTeachers] = React.useState(initialTeachers);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  React.useEffect(() => {
+  // Resynchronisation pendant le rendu (pattern React "adjusting state when props change")
+  if (prevInitialTeachers !== initialTeachers) {
+    setPrevInitialTeachers(initialTeachers);
     setTeachers(initialTeachers);
-  }, [initialTeachers]);
+  }
 
   const filteredTeachers = React.useMemo(() => {
     if (!searchQuery.trim()) return teachers;
@@ -72,6 +71,21 @@ export function TeachersClient({
       }
 
       toast.success("Enseignant ajouté avec succès !");
+
+      // Communiquer les accès provisoires à la direction (jamais stockés côté client)
+      const inviteLink = (res as { inviteLink?: string | null })?.inviteLink;
+      const tempPassword = (res as { tempPassword?: string | null })?.tempPassword;
+      if (inviteLink) {
+        toast.info("Lien d'invitation généré — transmettez-le à l'enseignant : " + inviteLink, {
+          duration: 20000,
+          description: "Ce lien permet à l'enseignant de choisir son propre mot de passe.",
+        });
+      } else if (tempPassword) {
+        toast.info("Mot de passe provisoire : " + tempPassword, {
+          duration: 20000,
+          description: "Communiquez-le à l'enseignant : il devra le changer à la première connexion.",
+        });
+      }
       setIsModalOpen(false);
       setIsSubmitting(false);
       router.refresh();

@@ -1817,3 +1817,7 @@ Sur smartphone, les actions d'appel en classe doivent offrir un micro-retour tac
 ## 12. GitHub 
 Voici le repo de notre logiciel. Fais les commit proprement et pousse quand il faut.
 https://github.com/Fafagnon/sukulu.git
+
+## URL configuration dans supabase
+Lors du déploiement en production, rappelle-moi d'ajouter ceci dans redirects url
+https://sukulu.app/** et https://*.sukulu.app/**

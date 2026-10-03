@@ -8,17 +8,13 @@ import {
   Plus,
   Upload,
   Download,
-  Filter,
   GraduationCap,
-  Calendar,
   Phone,
   AlertCircle,
   Eye,
   Archive,
   RefreshCw,
   X,
-  CheckCircle2,
-  FileSpreadsheet,
 } from "lucide-react";
 import {
   createStudentAction,
@@ -30,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
 import { type StudentStatus, type Gender } from "@/types/database";
+import { buildCsv, downloadTextFile } from "@/lib/csv";
 
 interface StudentParentInfo {
   id: string;
@@ -223,32 +220,24 @@ export function StudentsClient({
       const activeEnr = s.enrollments?.find((e) => e.academic_year_id === activeYearId);
       const primaryParent = s.student_parents?.find((p) => p.is_primary)?.parent;
       return [
-        `"${s.matricule}"`,
-        `"${s.last_name}"`,
-        `"${s.first_name}"`,
-        `"${s.gender}"`,
-        `"${s.birth_date}"`,
-        `"${s.birth_place || ""}"`,
-        `"${activeEnr?.classes?.name || "Non inscrit"}"`,
-        `"${activeEnr?.classes?.cycle || ""}"`,
-        `"${s.status}"`,
-        `"${primaryParent ? `${primaryParent.first_name} ${primaryParent.last_name}` : ""}"`,
-        `"${primaryParent?.phone || ""}"`,
-      ].join(",");
+        s.matricule,
+        s.last_name,
+        s.first_name,
+        s.gender,
+        s.birth_date,
+        s.birth_place || "",
+        activeEnr?.classes?.name || "Non inscrit",
+        activeEnr?.classes?.cycle || "",
+        s.status,
+        primaryParent ? `${primaryParent.first_name} ${primaryParent.last_name}` : "",
+        primaryParent?.phone || "",
+      ];
     });
 
-    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute(
-      "download",
-      `sukulu_eleves_${new Date().toISOString().split("T")[0]}.csv`
+    downloadTextFile(
+      `sukulu_eleves_${new Date().toISOString().split("T")[0]}.csv`,
+      buildCsv(headers, rows)
     );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
     toast.success(`${filteredStudents.length} élèves exportés avec succès.`);
   };
 

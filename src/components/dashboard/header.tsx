@@ -1,44 +1,37 @@
 import * as React from "react";
 import Link from "next/link";
-import { Calendar, CheckCircle, Clock } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
+import { Calendar, Clock } from "lucide-react";
+import { getAuthenticatedSchoolContext } from "@/lib/auth-context";
 
 export async function DashboardHeader() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   let activeYearName = "Non définie";
   let activePeriodName = "Aucune période active";
   let activePeriodStatus: "open" | "review" | "locked" = "open";
 
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("school_id")
-      .eq("id", user.id)
+  try {
+    const { supabase, schoolId } = await getAuthenticatedSchoolContext();
+    const { data: activeYear } = await supabase
+      .from("academic_years")
+      .select("id, name, periods(*)")
+      .eq("school_id", schoolId)
+      .eq("is_active", true)
       .maybeSingle();
 
-    if (profile?.school_id) {
-      const { data: activeYear } = await supabase
-        .from("academic_years")
-        .select("id, name, periods(*)")
-        .eq("school_id", profile.school_id)
-        .eq("is_active", true)
-        .maybeSingle();
-
-      if (activeYear) {
-        activeYearName = activeYear.name;
-        // Trouver la première période ouverte ou la période 1
-        const periods = (activeYear.periods as Array<{ name: string; status: "open" | "review" | "locked" }>) || [];
-        const openPeriod = periods.find((p) => p.status === "open") || periods[0];
-        if (openPeriod) {
-          activePeriodName = openPeriod.name;
-          activePeriodStatus = openPeriod.status;
-        }
+    if (activeYear) {
+      activeYearName = activeYear.name;
+      const periods =
+        (activeYear.periods as Array<{
+          name: string;
+          status: "open" | "review" | "locked";
+        }>) || [];
+      const openPeriod = periods.find((p) => p.status === "open") || periods[0];
+      if (openPeriod) {
+        activePeriodName = openPeriod.name;
+        activePeriodStatus = openPeriod.status;
       }
     }
+  } catch {
+    // Pas de session ou pas d'établissement : on garde les libellés par défaut
   }
 
   const statusLabels = {

@@ -8,16 +8,20 @@ import { AlertCircle } from "lucide-react";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { FormSkeleton } from "@/components/ui/skeleton";
-import { loginAction } from "@/features/auth/actions";
+import { loginAction, requestPasswordResetAction } from "@/features/auth/actions";
+import { safeRedirectPath } from "@/lib/utils";
 import { toast } from "sonner";
 
 function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirectTo");
+  const redirectTo = safeRedirectPath(searchParams.get("redirectTo"), "/admin");
 
   const [isLoading, setIsLoading] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const [isResetOpen, setIsResetOpen] = React.useState(false);
+  const [isResetLoading, setIsResetLoading] = React.useState(false);
+  const [resetEmail, setResetEmail] = React.useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -35,14 +39,30 @@ function LoginFormContent() {
 
     if (result.success) {
       toast.success("Connexion réussie.");
-      const target = redirectTo || result.redirectPath || "/admin";
+      const target = safeRedirectPath(redirectTo, result.redirectPath || "/admin");
       router.push(target);
       router.refresh();
     }
   };
 
+  const handlePasswordReset = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsResetLoading(true);
+    const formData = new FormData(e.currentTarget);
+    const res = await requestPasswordResetAction(formData);
+    setIsResetLoading(false);
+
+    if (res.error) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success(res.success);
+    setIsResetOpen(false);
+    setResetEmail("");
+  };
+
   return (
-    <div className="space-y-6">
+    <div suppressHydrationWarning className="space-y-6">
       {/* 1. Logo SUKULU officiel intégré directement en haut de la carte */}
       <div className="flex flex-col items-center justify-center text-center">
         <div className="relative w-36 h-10 mb-4">
@@ -70,7 +90,8 @@ function LoginFormContent() {
       )}
 
       {/* 2. Formulaire de connexion épuré */}
-      <form onSubmit={handleSubmit} className="space-y-4">
+      {/* method="post" : évite l'envoi natif en GET (mot de passe dans l'URL) si le JS n'est pas encore hydraté */}
+      <form method="post" onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
           <label
             htmlFor="email"
@@ -115,18 +136,19 @@ function LoginFormContent() {
             />
             <span>Se souvenir de moi</span>
           </label>
-          <a
-            href="#forgot"
-            onClick={(e) => {
-              e.preventDefault();
-              toast.info(
-                "Pour réinitialiser vos accès, contactez l'administration de votre établissement ou le support SUKULU."
-              );
-            }}
-            className="font-medium text-slate-600 hover:text-[#002B5B] transition-colors"
-          >
-            Mot de passe oublié ?
-          </a>
+          {isResetOpen ? (
+            <span className="text-xs text-slate-500">
+              Saisissez votre email ci-dessous pour recevoir le lien.
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsResetOpen(true)}
+              className="font-medium text-slate-600 hover:text-[#002B5B] transition-colors"
+            >
+              Mot de passe oublié ?
+            </button>
+          )}
         </div>
 
         {/* Bouton principal de connexion */}
@@ -145,6 +167,34 @@ function LoginFormContent() {
           )}
         </button>
       </form>
+
+      {/* Demande de réinitialisation de mot de passe (hors formulaire de connexion) */}
+      {isResetOpen && (
+        <form
+          method="post"
+          onSubmit={handlePasswordReset}
+          className="flex items-center gap-2"
+        >
+          <input
+            id="reset-email"
+            name="email"
+            type="email"
+            required
+            autoComplete="email"
+            placeholder="Votre adresse email"
+            value={resetEmail}
+            onChange={(e) => setResetEmail(e.target.value)}
+            className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 transition-all focus:outline-none focus:border-[#002B5B] focus:ring-1 focus:ring-[#002B5B]"
+          />
+          <button
+            type="submit"
+            disabled={isResetLoading}
+            className="h-10 shrink-0 rounded-xl bg-[#002B5B] px-4 text-xs font-semibold text-white transition-all hover:bg-[#001f42] disabled:opacity-60"
+          >
+            {isResetLoading ? "..." : "Envoyer"}
+          </button>
+        </form>
+      )}
 
       {/* 3. Séparateur "Ou" */}
       <div className="relative flex items-center justify-center">

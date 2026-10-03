@@ -6,29 +6,19 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   User,
-  GraduationCap,
-  Calendar,
   Phone,
   Mail,
-  MapPin,
   Heart,
-  AlertCircle,
-  Clock,
   Printer,
   Edit,
-  Archive,
   RefreshCw,
   Plus,
-  CheckCircle2,
   X,
   QrCode,
-  Shield,
-  FileText,
 } from "lucide-react";
 import {
   updateStudentAction,
   enrollStudentAction,
-  archiveStudentAction,
 } from "@/features/students/student-actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
